@@ -1,5 +1,7 @@
 #include "chip8_util.h"
 
+using namespace std;
+
 static void msg(const char* color_str, const char* format_str, va_list vargs){
     std::cout << color_str;
     vprintf(format_str, vargs);
@@ -47,7 +49,7 @@ void fatalError(int error_code, const char* format_string, ...){
     exit(error_code);
 }
 
-std::string build_error_message(const char* format_string, ...) {
+string build_error_message(const char* format_string, ...) {
     char temp[2048];
     va_list vargs;
     va_start(vargs, format_string);
@@ -56,7 +58,7 @@ std::string build_error_message(const char* format_string, ...) {
     return std::string(temp);
 }
 
-std::string build_error_message(const char* format_string, va_list vargs){
+string build_error_message(const char* format_string, va_list vargs){
     char temp[2048];
     vsprintf(temp, format_string, vargs);
     va_end(vargs);
@@ -72,7 +74,7 @@ mapper<T, U>::mapper(T i_l, T i_u, U o_l, U o_u){
 }
 
 template<typename T, typename U>
-U mapper<T, U>::map(T val){
+typename enable_if<is_integral<U>::value || is_floating_point<U>::value, U>::type mapper<T, U>::map(T val){
     if(val <= in_clamp_l)
         return out_clamp_l;
     if(val >= in_clamp_u)
@@ -81,7 +83,7 @@ U mapper<T, U>::map(T val){
 }
 
 template<typename T, typename U>
-T mapper<T, U>::unmap(U val){
+typename enable_if<is_integral<T>::value || is_floating_point<T>::value, T>::type mapper<T, U>::unmap(U val){
     if(val <= out_clamp_l)
         return in_clamp_l;
     if(val >= out_clamp_u)

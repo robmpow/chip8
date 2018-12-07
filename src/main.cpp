@@ -131,14 +131,57 @@ void deallocate(uint8_t* mem){
 
 int main(int argc, char** arv){
 
-    renderer r;
+    emulator_state_t es;
 
-    r.initDisplay();
-    r.createGLXWindow();
+    initDisplay(es);
+    createGLXWindow(es);
 
     chip8 ch8((uint) 0, (chip8io*) 0);
-
     ch8.reset();
+
+    int x11_event_fd = ConnectionNumber(es.disp);
+    fd_set watch_set;
+    timeval timeout = { 0, CLOCK_USEC};
+
+    FD_ZERO(&watch_set);
+    FD_SET(x11_event_fd, &watch_set);
+
+    uint8_t running = 1;
+    while(running){
+        int res = select(x11_event_fd + 1, &watch_set, NULL, NULL, &timeout);
+        if(res && res != -1){
+            /** Process X11 event **/
+            XEvent event;
+            XNextEvent(es.disp, &event);
+            D(debugMsg("Event: %d\n", event.type));
+            switch(event.type){
+                case Expose:
+                    //Handle expose/window update
+                    break;
+                case KeyPress:
+                    //Handle key press
+                    break;
+                case KeyRelease:
+                    //Handle Key release
+                    break;
+                case ClientMessage:
+                    running = 0;
+                    break;
+                default:
+                    break;
+            }
+        }
+        else{
+            /** Select timeout run chip8 tick **/
+
+            /** Reset timeval struct and re-add event queue fd to fd set. **/
+            timeout.tv_usec = CLOCK_USEC;
+            FD_ZERO(&watch_set);
+            FD_SET(x11_event_fd, &watch_set);
+        }
+    }
+
+    cleanup(es);
 
     // GLenum err_code = glewInit();
     // if(err_code != GLEW_OK){

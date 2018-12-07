@@ -1,4 +1,5 @@
 CXX:= g++
+CXX_VERSION:= c++14
 SRCDIR:= src
 BUILDDIR:= build
 TARGET:= bin/chip8
@@ -12,11 +13,11 @@ LIB := -lX11 -lGL -lXrender -lGLEW
 
 $(TARGET): $(OBJECTS)
 	@echo " Linking..."
-	@echo " $(CXX) $^ -o $(TARGET) $(LIB)"; $(CXX) $^ -o $(TARGET) $(LIB)
+	@echo " $(CXX) -std=$(CXX_VERSION) $^ -o $(TARGET) $(LIB)"; $(CXX) $^ -o $(TARGET) $(LIB)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
-	@echo " $(CXX) $(CXXFLAGS) $(INC) -c -o $@ $<"; $(CXX) $(CXXFLAGS) $(INC) -c -o $@ $<
+	@echo " $(CXX) -std=$(CXX_VERSION) $(CXXFLAGS) $(INC) -c -o $@ $<"; $(CXX) $(CXXFLAGS) $(INC) -c -o $@ $<
 
 clean:
 	@echo " Cleaning..."; 

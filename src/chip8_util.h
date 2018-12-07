@@ -24,6 +24,8 @@
 #define D(x) 
 #endif
 
+using namespace std;
+
 void debugMsg(const char* format_str, ...);
 void debugMsg(const char* format_str, va_list vargs);
 void errorMsg(const char* format_str, ...);
@@ -31,8 +33,8 @@ void errorMsg(const char* format_str, va_list vargs);
 void okMsg(const char* format_str, ...);
 void okMsg(const char* format_str, va_list vargs);
 void fatalError(int error_code, const char* format_string, ...);
-std::string build_error_message(const char* format_string, ...);
-std::string build_error_message(const char* format_string, va_list vargs);
+string build_error_message(const char* format_string, ...);
+string build_error_message(const char* format_string, va_list vargs);
 
 template<typename T, typename U>
 class mapper{
@@ -43,8 +45,8 @@ private:
     
 public:
     mapper(T i_l, T i_u, U o_l, U o_u);
-    U map(T val);
-    T unmap(U val);
+    typename enable_if<is_integral<U>::value || is_floating_point<U>::value, U>::type map(T value);
+    typename enable_if<is_integral<T>::value || is_floating_point<T>::value, T>::type unmap(U value);
 };
 
 #endif //CHIP8_UTIL_H

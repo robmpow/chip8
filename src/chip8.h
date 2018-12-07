@@ -48,6 +48,8 @@
 
 #define TOTAL_MEM_SIZE      0x1134
 
+#define CLOCK_USEC          2000 
+
 #define V(ind)          v_regs[ind]
 #define Vx              v_regs[op >> 2 & 0xF]
 #define Vy              v_regs[op >> 1 & 0xF]

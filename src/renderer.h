@@ -12,20 +12,17 @@ using namespace std;
 
 extern const char* prog_title;
 
-class renderer{
-
-private:
+typedef struct{
     Display* disp;
     Window win;
     GLXContext glx_ctx;
+    uint32_t button_state;
+}emu_state_t;
 
-public:
-    renderer();
-    void initDisplay();
-    void createGLXWindow();
-    void render();
-    void poll_input();
-    ~renderer();
-};
+void initDisplay(emu_state_t& es);
+void createGLXWindow(emu_state_t& es);
+void render();
+void poll_input();
+void cleanup(emu_state_t& es);
 
 #endif
