@@ -4,9 +4,9 @@ BUILDDIR:= build
 TARGET:= bin/chip8
 
 SRCEXT := cpp
-#SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
-SOURCES := src/main.cpp
-OBJECTS := build/main.o #$(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
+SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
+#SOURCES := src/main.cpp src/renderer.cpp src/chip8.cpp src/chip8_util.cpp
+OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CXXFLAGS := -Wall -Werror
 LIB := -lX11 -lGL -lXrender -lGLEW
 

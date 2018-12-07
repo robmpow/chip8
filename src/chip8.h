@@ -5,8 +5,8 @@
 #include <cstdint>
 #include <string>
 
-#ifndef CHIP8_CHIP8_H
-#define CHIP8_CHIP8_H
+#ifndef CHIP8_H
+#define CHIP8_H
 
 /*
  *      Memory Map
@@ -22,42 +22,43 @@
  * |      Reg I       |
  * |_____ 0x1012 _____|
  * |    Reg DT/ST     |
- * |_____ 0x1016 _____|
+ * |_____ 0x1014 _____|
  * |      Stack       |
- * |_____ 0x1036 _____|
+ * |_____ 0x1034 _____|
  * |  Display Bitmap  |
- * |_____ 0x1836 _____|
+ * |_____ 0x1834 _____|
  */
-#define MEM_START           0X0000
-#define SPRITE_TABLE_SIZE   0x0000
-#define PROG_START          0x0200
-#define MEM_SIZE            0x0FFF
-#define REGISTERS_START     0x1000
-#define NUM_REGISTERS       0x0010
-#define REG_I               0x1010
-#define REG_T               0x1012
-#define STACK_START         0x1016
-#define STACK_SIZE          0x000F
-#define DISPLAY_START       0x1036
-#define DISPLAY_X           0x0010
-#define DISPLAY_Y           0x0020
 
-#define TOTAL_MEM_SIZE      0x1836
+#define MAIN_MEM_OFFSET     0X0000
+#define SPRITE_TABLE_SIZE   0x0050
+#define PROG_START_OFFSET   0x0200
+#define MAIN_MEM_SIZE       0x1000
+#define V_REG_OFFSET        0x1000
+#define NUM_V_REG           0x0010
+#define I_REG_OFFSET        0x1010
+#define DT_REG_OFFSET       0x1012
+#define ST_REG_OFFSET       0x1013
+#define STACK_OFFSET        0x1014
+#define STACK_SIZE          0x0020
+#define DISP_OFFSET         0x1034
+#define DISP_SIZE           0x0100
 
-#define V(ind)          registers[ind]
-#define Vx              registers[op >> 2 & 0xF]
-#define Vy              registers[op >> 1 & 0xF]
+#define DISP_X              0x0040
+#define DISP_Y              0x0020
+
+#define TOTAL_MEM_SIZE      0x1134
+
+#define V(ind)          v_regs[ind]
+#define Vx              v_regs[op >> 2 & 0xF]
+#define Vy              v_regs[op >> 1 & 0xF]
 #define nnn             static_cast<uint8_t>(op & 0x0FFF)
 #define kk              static_cast<uint8_t>(op & 0x00FF)
 #define nib             (op & 0xF)
 
 class chip8io{
 public:
-    virtual void memory_allocate(uint8_t** memory);
     virtual void render();
-    virtual bool poll_input();
-    virtual bool wait_input();
-    virtual void memory_deallocate(uint8_t** memory);
+    virtual void poll_input();
 };
 
 class chip8 {
@@ -81,18 +82,18 @@ private:
     uint seed;
 
     uint8_t* memory;
-    uint8_t* registers;
+    uint8_t* v_regs;
     uint16_t* stack;
-    uint8_t* display;
-    uint16_t* register_i;
-    uint8_t* register_dt;
-    uint8_t* register_st;
+    uint8_t* disp;
+    uint16_t* i_reg;
+    uint8_t* dt_reg;
+    uint8_t* st_reg;
 
     int8_t stack_pointer;
     uint16_t program_counter;
 
 public:
-    chip8(uint seed, chip8io io);
+    chip8(uint seed, chip8io* io);
     ~chip8();
 
     void reset();
@@ -105,4 +106,5 @@ private:
 };
 
 
-#endif //CHIP8_CHIP8_H
+#endif //CHIP8_H
+ 

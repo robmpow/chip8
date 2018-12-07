@@ -9,32 +9,66 @@
 #include <cstdlib>
 
 #include "chip8.h"
-#include "util.h"
+#include "chip8_util.h"
 
-chip8::chip8(uint seed, chip8io io){
+/*
+ *      Memory Map
+ *  _____ 0x0000 _____
+ * |        *         |
+ * |        *         |
+ * |   Main Memory    |
+ * |        *         |
+ * |        *         |
+ * |_____ 0x1000 _____|
+ * |   V Reg (0-F)    |
+ * |_____ 0x1010 _____|
+ * |      Reg I       |
+ * |_____ 0x1012 _____|
+ * |    Reg DT/ST     |
+ * |_____ 0x1014 _____|
+ * |      Stack       |
+ * |_____ 0x1034 _____|
+ * |  Display Bitmap  |
+ * |_____ 0x1834 _____|
+ */
+
+extern uint8_t* allocate();
+extern void deallocate(uint8_t* mem);
+
+chip8::chip8(uint seed, chip8io* io){
     this->seed = seed;
+    this->memory = allocate();
+    this->stack = (uint16_t*) (memory + STACK_OFFSET);
+    this->v_regs = memory + V_REG_OFFSET;
+    this->i_reg = (uint16_t*) (memory + I_REG_OFFSET);
+    this->dt_reg = memory + DT_REG_OFFSET;
+    this->st_reg = memory + ST_REG_OFFSET;
+    this->disp = memory + DISP_OFFSET;
+}   
+
+chip8::~chip8(){
+    deallocate(this->memory);
 }
 
 void chip8::reset() {
-    memcpy(memory, sprite_table, 0x50);
-    memset(memory + PROG_START, 0, MEMORY_SIZE - PROG_START);
-    memset(stack, 0, STACK_SIZE);
-    memset(registers, 0 , NUM_REGISTERS);
-    register_i = 0;
-    register_dt = 0;
-    register_st = 0;
+    //memcpy(memory, sprite_table, 0x50);
+    memset(memory, 's', SPRITE_TABLE_SIZE);
+    memset(memory + PROG_START_OFFSET, 'm', MAIN_MEM_SIZE - PROG_START_OFFSET);
+    memset((uint8_t*) stack, 's', STACK_SIZE);
+    memset(v_regs, 'v' , NUM_V_REG);
+    *i_reg = ('i' << 8) | 'i';
+    *dt_reg = 't';
+    *st_reg = 't';
+    memset(memory + DISP_OFFSET, 'd', DISP_SIZE);
     program_counter = 0x200;
     stack_pointer = -1;
-    register_i = 0;
-    register_dt = 0;
-    register_st = 0;
     srand(seed);
 }
 
 void chip8::load(std::string file_path){
     std::ifstream file_stream;
     file_stream.open(file_path);
-    file_stream.read((char*) memory, MEMORY_SIZE);
+    file_stream.read((char*) memory, MAIN_MEM_SIZE);
 }
 
 /*
@@ -46,23 +80,23 @@ void chip8::load(std::string file_path){
  */
 
 void chip8::run_tick() {
-    uint16_t op = *((uint16_t*)  (memory + PROG_START + program_counter));
+    uint16_t op = *((uint16_t*)  (memory + PROG_START_OFFSET + program_counter));
     switch(op & 0xFF00){
         case 0x0000:
             switch(op & 0x0FFF){
                 case 0x0E0:
                     //clear display
-                    memset(display, 0, DISPLAY_Y * (DISPLAY_X / sizeof(uint8_t)));
+                    memset(disp, 0, DISP_Y * (DISP_X / sizeof(uint8_t)));
                     break;
                 case 0x0EE:
                     //ret
                     if(stack_pointer == -1){
-                        throw build_err_message("Ret with empty stack at address <0x%hx>.\n");
+                        throw build_error_message("Ret with empty stack at address <0x%hx>.\n");
                     }
                     program_counter = stack[stack_pointer--];
                     break;
                 default:
-                    throw build_err_message("Unknown opcode <0x%hx> at address <0x%hx>.\n", op, PROG_START + program_counter);
+                    throw build_error_message("Unknown opcode <0x%hx> at address <0x%hx>.\n", op, PROG_START_OFFSET + program_counter);
 
             }
             break;
@@ -84,7 +118,7 @@ void chip8::run_tick() {
             }
             break;
         case 0x5000:
-            if(Vx == registers[Vy]){
+            if(Vx == v_regs[Vy]){
                 program_counter+=2;
             }
             break;
@@ -115,18 +149,18 @@ void chip8::run_tick() {
                     Vx |= Vy;
                     break;
                 case 6:
-                    registers[0xF] = static_cast<uint8_t>(Vx & 0x1);
+                    v_regs[0xF] = static_cast<uint8_t>(Vx & 0x1);
                     Vx >>= 2;
                     break;
                 case 7:
-                    registers[0xF] = static_cast<uint8_t>(Vy > Vx);
+                    v_regs[0xF] = static_cast<uint8_t>(Vy > Vx);
                     Vx = Vy - Vx;
                     break;
                 case 0xE:
-                    registers[0xF] = static_cast<uint8_t>((Vx & 0x80)? 1 : 0);
+                    v_regs[0xF] = static_cast<uint8_t>((Vx & 0x80)? 1 : 0);
                     Vx >>= 2;
                 default:
-                    throw build_err_message("Unknown opcode <0x%hx> at address <0x%hx>.\n", op, PROG_START + program_counter);
+                    throw build_error_message("Unknown opcode <0x%hx> at address <0x%hx>.\n", op, PROG_START_OFFSET + program_counter);
             }
             break;
         case 0x9000:
@@ -135,10 +169,10 @@ void chip8::run_tick() {
             }
             break;
         case 0xA000:
-            register_i = nnn;
+            *i_reg = nnn;
             break;
         case 0xB000:
-            program_counter = nnn + registers[0];
+            program_counter = nnn + v_regs[0];
             break;
         case 0xC000:
             Vx = rand() & kk;
@@ -155,50 +189,50 @@ void chip8::run_tick() {
                     //check if key not pressed
                     break;
                 default:
-                    throw build_err_message("Unknown opcode <0x%hx> at address <0x%hx>.\n", op, PROG_START + program_counter);
+                    throw build_error_message("Unknown opcode <0x%hx> at address <0x%hx>.\n", op, PROG_START_OFFSET + program_counter);
             }
             break;
         case 0xF000:
             switch(kk){
                 case 0x07:
-                    Vx = register_dt; 
+                    Vx = *dt_reg; 
                     break;
                 case 0x0A:
                     //wait for key press
                     break;
                 case 0x15:
-                    register_dt = Vx;
+                    *dt_reg = Vx;
                     break;
                 case 0x18:
-                    register_st = Vx;
+                    *st_reg = Vx;
                     break;
                 case 0x1E:
-                    register_i += Vx;
+                    *i_reg += Vx;
                     break;
                 case 0x29:
-                    register_i = Vx * 5;
+                    *i_reg = Vx * 5;
                     break;
                 case 0x33:
-                    memory[register_i] = Vx / 100;
-                    memory[register_i + 1] = (Vx % 100) / 10;
-                    memory[register_i + 2] = Vx % 10;
+                    memory[*i_reg] = Vx / 100;
+                    memory[*i_reg +1] = (Vx % 100) / 10;
+                    memory[*i_reg + 2] = Vx % 10;
                     break;
                 case 0x55:
                     for(uint8_t i = 0; i < 0x10; i++){
-                        memory[register_i + i] = V(i); 
+                        memory[*i_reg + i] = V(i); 
                     }
                     break;
                 case 0x65:
                     for(uint8_t i = 0; i < 0x10; i++){
-                        V(i) = memory[register_i + i]; 
+                        V(i) = memory[*i_reg + i]; 
                     }
                     break;
                 default:
-                    throw build_err_message("Unknown opcode <0x%hx> at address <0x%hx>.\n", op, PROG_START + program_counter);
+                    throw build_error_message("Unknown opcode <0x%hx> at address <0x%hx>.\n", op, PROG_START_OFFSET + program_counter);
             }
             break;
         default:
-            throw build_err_message("Unknown opcode <0x%hx> at address <0x%hx>.\n", op, PROG_START + program_counter);
+            throw build_error_message("Unknown opcode <0x%hx> at address <0x%hx>.\n", op, PROG_START_OFFSET + program_counter);
     }
     program_counter+=2;
 }
