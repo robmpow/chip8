@@ -8,6 +8,7 @@
 #include <X11/Xos.h>
 #include <X11/Xatom.h>
 #include <X11/extensions/Xrender.h>
+#include <X11/XKBlib.h>
 
 #include <GL/glew.h>
 #include <GL/glx.h> 
@@ -20,8 +21,10 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <getopt.h>
+#include <cstring>
 
-#include "renderer.h"
+#include "emulator.h"
 #include "chip8.h"
 #include "chip8_util.h"
 
@@ -58,7 +61,7 @@ const GLubyte test_bitmap[8*32] = {     0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA
                                         0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
                                         0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,};   
 
-
+using namespace std;
 
 uint8_t colors[] = { 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF};
 
@@ -129,17 +132,71 @@ void deallocate(uint8_t* mem){
     return;
 }
 
-int main(int argc, char** arv){
+static const option opts[] =   {{"res",     required_argument,  0,  'r'},
+                                {"help",    no_argument,        0,  'h'},
+                                {0,         0,                  0,  0}};
 
-    emulator_state_t es;
+static const char usage[] = "usage: %s rom_file [-r | -res widthxheight]\n\t-r | -res wxh: sets the starting display resolution width to w and height to h.";
 
-    initDisplay(es);
-    createGLXWindow(es);
+int main(int argc, char** argv){
+
+    emulator emu;
+
+    int opt;
+    char* rom_path = 0;
+    opterr = 0;
+    while((opt = getopt_long(argc, argv, "r:h", opts, NULL)) != -1){
+        switch(opt){
+            case 'r':
+                if(optarg){
+                    char* split;
+                    uint16_t width = strtoul(optarg, &split, 10), height;
+                    if(*split){
+                        height = strtoul(split + 1, NULL, 10);
+                    }
+                    else fatalError(1, "Error: [-r | -res wxh ]: invalid screen resolution format.\n");
+                    if(!width || !height){
+                        fatalError(1, "Error: [-r | -res wxh ]: invalid screen resolution format.\n");
+                    }
+                    emu.setRes(width, height);
+                    D(debugMsg("Screen res set width: %d, height: %d.\n", width, height));
+                }
+                else fatalError(1, "Error: [-r | --res wxh]: missing screen resolution argument.\n");
+                break;
+            case 'h':
+                printf(usage, argv[0]);
+                exit(0);
+            case '?':
+                errorMsg("Error: %s: flag not recognized.\n", argv[optind - 1]);
+                printf(usage, argv[0]);
+                exit(1);
+            default:
+                break;
+        }
+    }
+
+    while(optind < argc){
+        const char* type;
+        if((type = fileExists(argv[optind])) != reg_file){
+            if(type){
+                fatalError(1, "Error: %s: File type %s is not supported.\n", argv[optind], type);
+            }
+            fatalError(1, "Error: %s: file not found.\n", argv[optind]);
+        }
+        rom_path = argv[optind];
+        D(debugMsg("Rom file: %s\n", rom_path));
+        optind++;
+    }
+    if(!rom_path){
+        fatalError(1, "Error: No input file path to chip8 rom.\n");
+    }
+
+    emu.createGLXWindow();
 
     chip8 ch8((uint) 0, (chip8io*) 0);
     ch8.reset();
 
-    int x11_event_fd = ConnectionNumber(es.disp);
+    int x11_event_fd = ConnectionNumber(emu.getDisplay());
     fd_set watch_set;
     timeval timeout = { 0, CLOCK_USEC};
 
@@ -152,13 +209,14 @@ int main(int argc, char** arv){
         if(res && res != -1){
             /** Process X11 event **/
             XEvent event;
-            XNextEvent(es.disp, &event);
+            XNextEvent(emu.getDisplay(), &event);
             D(debugMsg("Event: %d\n", event.type));
             switch(event.type){
                 case Expose:
                     //Handle expose/window update
                     break;
                 case KeyPress:
+                    std::cout << "Key: " << XKeysymToString(XkbKeycodeToKeysym(emu.getDisplay(), event.xkey.keycode, 0, 0)) << std::endl;
                     //Handle key press
                     break;
                 case KeyRelease:
@@ -180,8 +238,6 @@ int main(int argc, char** arv){
             FD_SET(x11_event_fd, &watch_set);
         }
     }
-
-    cleanup(es);
 
     // GLenum err_code = glewInit();
     // if(err_code != GLEW_OK){

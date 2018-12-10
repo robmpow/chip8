@@ -1,4 +1,4 @@
-#include "renderer.h"
+#include "emulator.h"
 #include "chip8_util.h"
 
 #include <X11/Xutil.h>
@@ -13,23 +13,22 @@
 
 const char* prog_title = "Chip8 Emu";
 
-void initDisplay(emu_state_t& es){
+emulator::emulator(){
     // Open X11 display connection
     D(debugMsg("Opening X11 Display connection..."));
-    es.disp  = XOpenDisplay(NULL);
-    if(!es.disp ){
+    disp  = XOpenDisplay(NULL);
+    if(!disp){
         fatalError(1, "XError: Cannot connect to XServer (%s).\n", XDisplayName(NULL));
     }
     D(okMsg("Done\n"));
 
     // Check if GLX verison >= 1.3 since fbc was added in 1.3
     int glx_major, glx_minor;
-    if(!glXQueryVersion(es.disp , &glx_major, &glx_minor) || (glx_major == 1 && glx_minor < 3)){
+    if(!glXQueryVersion(disp , &glx_major, &glx_minor) || (glx_major == 1 && glx_minor < 3)){
         fatalError(1, "Xerror: Requires GLX version 1.3 or greater. Current: %d.%d\n");
     }
     D(debugMsg("GLX version: %d.%d\n", glx_major, glx_minor));
 }
-
 
 static int GL_Visual_Attrs[] = {
     GLX_X_RENDERABLE    , True,
@@ -92,11 +91,11 @@ static int ctxErrorHandler( Display *dpy, XErrorEvent *ev )
     return 0;
 }
 
-void createGLXWindow(emu_state_t& es ){
+void emulator::createGLXWindow(){
     // Get list of matching frame buffer configs
     D(debugMsg("Choosing frame buffer configuration..."));
     int fbc_count;
-    GLXFBConfig* fbc = glXChooseFBConfig(es.disp , DefaultScreen(es.disp ), GL_Visual_Attrs, &fbc_count);
+    GLXFBConfig* fbc = glXChooseFBConfig(disp , DefaultScreen(disp ), GL_Visual_Attrs, &fbc_count);
     GLXFBConfig fb_config = 0;
     int fb_samples = 0;
 
@@ -106,13 +105,13 @@ void createGLXWindow(emu_state_t& es ){
 
     XVisualInfo* vi;
     for(int i=0; i < fbc_count; i++){
-        vi = (XVisualInfo*) glXGetVisualFromFBConfig(es.disp , fbc[i]);
+        vi = (XVisualInfo*) glXGetVisualFromFBConfig(disp , fbc[i]);
 		if(!vi)
 			continue;
 
         int samp_buf, samples;
-        glXGetFBConfigAttrib( es.disp , fbc[i], GLX_SAMPLE_BUFFERS, &samp_buf );
-        glXGetFBConfigAttrib( es.disp , fbc[i], GLX_SAMPLES       , &samples  );
+        glXGetFBConfigAttrib( disp , fbc[i], GLX_SAMPLE_BUFFERS, &samp_buf );
+        glXGetFBConfigAttrib( disp , fbc[i], GLX_SAMPLES       , &samples  );
     
 
         if ( fb_config == 0 || (samp_buf && (samples > fb_samples)))
@@ -126,24 +125,24 @@ void createGLXWindow(emu_state_t& es ){
 
     XFree(fbc);
 
-    vi = glXGetVisualFromFBConfig(es.disp , fb_config);
+    vi = glXGetVisualFromFBConfig(disp , fb_config);
 
     #ifdef DEBUG
 
     int fdb, rb, bb, gb, ab, db;
-    glXGetFBConfigAttrib(es.disp , fb_config, GLX_DOUBLEBUFFER, &fdb);
-	glXGetFBConfigAttrib(es.disp , fb_config, GLX_RED_SIZE, &rb);
-	glXGetFBConfigAttrib(es.disp , fb_config, GLX_GREEN_SIZE, &gb);
-	glXGetFBConfigAttrib(es.disp , fb_config, GLX_BLUE_SIZE, &bb);
-	glXGetFBConfigAttrib(es.disp , fb_config, GLX_ALPHA_SIZE, &ab);
-	glXGetFBConfigAttrib(es.disp , fb_config, GLX_DEPTH_SIZE, &db);
+    glXGetFBConfigAttrib(disp , fb_config, GLX_DOUBLEBUFFER, &fdb);
+	glXGetFBConfigAttrib(disp , fb_config, GLX_RED_SIZE, &rb);
+	glXGetFBConfigAttrib(disp , fb_config, GLX_GREEN_SIZE, &gb);
+	glXGetFBConfigAttrib(disp , fb_config, GLX_BLUE_SIZE, &bb);
+	glXGetFBConfigAttrib(disp , fb_config, GLX_ALPHA_SIZE, &ab);
+	glXGetFBConfigAttrib(disp , fb_config, GLX_DEPTH_SIZE, &db);
     #endif
 
     D(okMsg("Done\n"));
     D(debugMsg("Chosen FB Configuration:\n\tDouble Buffered: %s\n\tColor Bits:\n\t\tRed: %d\n\t\tGreen: %d\n\t\tBlue: %d\n\t\tAlpha: %d\n\tDepth: %d\n", fdb? "Yes" : "No", rb, gb, bb, ab, db));
 
     XSetWindowAttributes win_attrs;
-    win_attrs.colormap = XCreateColormap(es.disp , RootWindow(es.disp , vi->screen), vi->visual, AllocNone);
+    win_attrs.colormap = XCreateColormap(disp , RootWindow(disp , vi->screen), vi->visual, AllocNone);
     win_attrs.background_pixmap = None;
 	win_attrs.border_pixel = 0;
 	win_attrs.event_mask = StructureNotifyMask | KeyPress | KeyRelease;
@@ -153,14 +152,14 @@ void createGLXWindow(emu_state_t& es ){
 		CWBorderPixel|
 		CWEventMask;
 
-    int width = DisplayWidth(es.disp , vi->screen/2);
-	int height = DisplayHeight(es.disp , vi->screen/2);
+    int width = DisplayWidth(disp , vi->screen/2);
+	int height = DisplayHeight(disp , vi->screen/2);
 	int y=height/2, x=y*2;
 
     D(debugMsg("Creating X11 window..."));
 
-    es.win = XCreateWindow(es.disp , RootWindow(es.disp , vi->screen), x, y, width, height, 5, vi->depth, InputOutput, vi->visual, attr_mask, &win_attrs);
-    if(!es.win){
+    win = XCreateWindow(disp , RootWindow(disp , vi->screen), x, y, width, height, 5, vi->depth, InputOutput, vi->visual, attr_mask, &win_attrs);
+    if(!win){
 
         fatalError(1, "Failed to create X11 window.\n");
     }
@@ -169,7 +168,7 @@ void createGLXWindow(emu_state_t& es ){
 
     D(debugMsg("Done.\n"));
 
-    XStoreName(es.disp , es.win, prog_title);
+    XStoreName(disp , win, prog_title);
 
     XSizeHints hints;
 	XWMHints *startup_state;
@@ -190,7 +189,7 @@ void createGLXWindow(emu_state_t& es ){
 	startup_state->initial_state = NormalState;
 	startup_state->flags = StateHint;
 
-	XSetWMProperties(es.disp , es.win, &textprop, &textprop,
+	XSetWMProperties(disp , win, &textprop, &textprop,
 			NULL, 0,
 			&hints,
 			startup_state,
@@ -200,19 +199,19 @@ void createGLXWindow(emu_state_t& es ){
 
     D(debugMsg("Mapping window..."));
 
-    XMapWindow(es.disp , es.win);
+    XMapWindow(disp , win);
 
     XEvent event;
 
-    XIfEvent(es.disp , &event, WaitNotify, (XPointer) &es.win);
+    XIfEvent(disp , &event, WaitNotify, (XPointer) &win);
 
     D(okMsg("Done\n"));
 
-    Atom atom_del = XInternAtom(es.disp , "WM_DELETE_WINDOW", 1);
-    XSetWMProtocols(es.disp , es.win, &atom_del, 1);
+    Atom atom_del = XInternAtom(disp , "WM_DELETE_WINDOW", 1);
+    XSetWMProtocols(disp , win, &atom_del, 1);
 
     // Query the OpenGL extensions supported by Xserver
-    const char* glx_exts = glXQueryExtensionsString(es.disp , DefaultScreen(es.disp ));
+    const char* glx_exts = glXQueryExtensionsString(disp , DefaultScreen(disp ));
 
     // Replace the XServer error handler while attempting to create OpenGL 3.0 context
     ctxErrorOccurred = false;
@@ -227,17 +226,17 @@ void createGLXWindow(emu_state_t& es ){
 
     D(debugMsg("ARB Address: %p\n", glXCreateContextAttribsARB));
 
-    es.glx_ctx = 0;
+    glx_ctx = 0;
 
     // Use GLX_ARB_Create_Context function if it is supported, otherwise use glx 1.3 context creation
     if(!isExtensionSupported(glx_exts, "GLX_ARB_create_context") || !glXCreateContextAttribsARB){
         D(debugMsg("glxCreateAttributesARB() not supported, creating GL context using old-style creation..."));
-        es.glx_ctx = glXCreateNewContext(es.disp , fb_config, GLX_RGBA_TYPE, 0, True);
+        glx_ctx = glXCreateNewContext(disp , fb_config, GLX_RGBA_TYPE, 0, True);
 
-        XSync(es.disp , False);
-        if(ctxErrorOccurred || !es.glx_ctx){
+        XSync(disp , False);
+        if(ctxErrorOccurred || !glx_ctx){
             char msgbuff[512];
-            XGetErrorText(es.disp , xErrorCode, msgbuff, 512);
+            XGetErrorText(disp , xErrorCode, msgbuff, 512);
             fatalError(1, "Gl Context Creation Failed - XError: %s\n", msgbuff);
         }
         D(okMsg("Done\n"));
@@ -253,15 +252,15 @@ void createGLXWindow(emu_state_t& es ){
 
 
         D(debugMsg("Creating GL context using ARB function..."));
-        es.glx_ctx = glXCreateContextAttribsARB( es.disp , fb_config, 0,
+        glx_ctx = glXCreateContextAttribsARB( disp , fb_config, 0,
                                       True, context_attribs );
-        XSync(es.disp , False);
-        if(!ctxErrorOccurred && es.glx_ctx)
+        XSync(disp , False);
+        if(!ctxErrorOccurred && glx_ctx)
             D(okMsg("Done\n"));
         else{
 
             char msgbuff[512];
-            XGetErrorText(es.disp , xErrorCode, msgbuff, 512);
+            XGetErrorText(disp , xErrorCode, msgbuff, 512);
             D(errorMsg("GL 3.0 context creation failed - XError: %s\n", msgbuff));
             D(debugMsg("Creating GL context using old-style creation..."));
 
@@ -271,13 +270,13 @@ void createGLXWindow(emu_state_t& es ){
             context_attribs[1] = 1;
             context_attribs[3] = 0;
 
-            es.glx_ctx = glXCreateContextAttribsARB( es.disp , fb_config, 0,
+            glx_ctx = glXCreateContextAttribsARB( disp , fb_config, 0,
                                       True, context_attribs );
 
-            XSync(es.disp , False);
-            if(ctxErrorOccurred || !es.glx_ctx){
+            XSync(disp , False);
+            if(ctxErrorOccurred || !glx_ctx){
                 char msgbuff[512];
-                XGetErrorText(es.disp , xErrorCode, msgbuff, 512);
+                XGetErrorText(disp , xErrorCode, msgbuff, 512);
                 fatalError(1, "Gl context creation failed - XError: %s\n", msgbuff);
             }
             D(okMsg("Done\n"));
@@ -289,7 +288,7 @@ void createGLXWindow(emu_state_t& es ){
     XSetErrorHandler(oldHandler);
 
     // Verifying that context is a direct context
-    if ( ! glXIsDirect ( es.disp , es.glx_ctx ) )
+    if ( ! glXIsDirect ( disp , glx_ctx ) )
     {
         D(debugMsg("Indirect GLX rendering context obtained\n" ));
     }
@@ -299,12 +298,48 @@ void createGLXWindow(emu_state_t& es ){
     }
 
     D(debugMsg("Making context current\n"));
-    glXMakeCurrent( es.disp , es.win, es.glx_ctx );
+    glXMakeCurrent( disp , win, glx_ctx );
 }
 
-void cleanup(emu_state_t& es){
-    XDestroyWindow(es.disp, es.win);
-    if(es.disp){
-        XCloseDisplay(es.disp);
+Display* emulator::getDisplay(){
+    return disp;
+}
+
+Window emulator::getWindow(){
+    return win;
+}
+
+uint32_t emulator::getAllButtons(){
+    return button_state;
+}
+
+void emulator::setAllButtons(uint32_t new_val){
+    button_state = new_val;
+}
+
+void emulator::setButton(char button, uint8_t button_val){
+
+}
+
+uint8_t emulator::getButton(char button){
+    return 0;
+}
+
+void emulator::setRes(uint16_t width, uint16_t height){
+    res.width = width;
+    res.height = height;
+}
+
+void emulator::setRes(res_t res){
+    this->res = res;
+}
+
+res_t emulator::getRes(){
+    return res;
+}
+emulator::~emulator(){
+    XDestroyWindow(disp, win);
+    if(disp){
+        XCloseDisplay(disp);
     }
 }

@@ -9,6 +9,7 @@
 #include <string>
 #include <cstring>
 #include <cstdarg>
+#include <sys/stat.h>
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -35,6 +36,17 @@ void okMsg(const char* format_str, va_list vargs);
 void fatalError(int error_code, const char* format_string, ...);
 string build_error_message(const char* format_string, ...);
 string build_error_message(const char* format_string, va_list vargs);
+
+typedef struct{
+    char type;
+    char* type_long;
+} file_type_t;
+
+extern const char* file_typenames[];
+
+extern const char* reg_file;
+
+const char* fileExists(char* file_path);
 
 template<typename T, typename U>
 class mapper{
