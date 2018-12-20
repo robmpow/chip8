@@ -9,6 +9,7 @@
 #include <X11/Xatom.h>
 #include <X11/extensions/Xrender.h>
 #include <X11/XKBlib.h>
+#include <X11/keysym.h>
 
 #include <GL/glew.h>
 #include <GL/glx.h> 
@@ -23,43 +24,12 @@
 #include <cstdlib>
 #include <getopt.h>
 #include <cstring>
+#include <unordered_map>
 
 #include "emulator.h"
 #include "chip8.h"
 #include "chip8_util.h"
-
-const GLubyte test_bitmap[8*32] = {     0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-                                        0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-                                        0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-                                        0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-                                        0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-                                        0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-                                        0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-                                        0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-                                        0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-                                        0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-                                        0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-                                        0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-                                        0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-                                        0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-                                        0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-                                        0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-                                        0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55,};   
+#include "ini_reader.h"
 
 using namespace std;
 
@@ -133,6 +103,7 @@ void deallocate(uint8_t* mem){
 }
 
 static const option opts[] =   {{"res",     required_argument,  0,  'r'},
+                                {"bind",    required_argument,  0,  'b'},
                                 {"help",    no_argument,        0,  'h'},
                                 {0,         0,                  0,  0}};
 
@@ -140,7 +111,16 @@ static const char usage[] = "usage: %s rom_file [-r | -res widthxheight]\n\t-r |
 
 int main(int argc, char** argv){
 
-    emulator emu;
+    res_t disp_res;
+
+    try{
+        ini_reader config("bin/config.ini");
+        disp_res.width = config.getInt("Display", "disp_width", 640);
+        disp_res.height = config.getInt("Display", "disp_height", 480);
+    }
+    catch(string error){
+        fatalError(1, error.c_str());
+    }
 
     int opt;
     char* rom_path = 0;
@@ -150,16 +130,15 @@ int main(int argc, char** argv){
             case 'r':
                 if(optarg){
                     char* split;
-                    uint16_t width = strtoul(optarg, &split, 10), height;
+                    disp_res.width = strtoul(optarg, &split, 10);
                     if(*split){
-                        height = strtoul(split + 1, NULL, 10);
+                        disp_res.height = strtoul(split + 1, NULL, 10);
                     }
                     else fatalError(1, "Error: [-r | -res wxh ]: invalid screen resolution format.\n");
-                    if(!width || !height){
+                    if(!disp_res.width || !disp_res.height){
                         fatalError(1, "Error: [-r | -res wxh ]: invalid screen resolution format.\n");
                     }
-                    emu.setRes(width, height);
-                    D(debugMsg("Screen res set width: %d, height: %d.\n", width, height));
+                    D(debugMsg("Screen res set width: %d, height: %d.\n", disp_res.width, disp_res.height));
                 }
                 else fatalError(1, "Error: [-r | --res wxh]: missing screen resolution argument.\n");
                 break;
@@ -190,6 +169,11 @@ int main(int argc, char** argv){
     if(!rom_path){
         fatalError(1, "Error: No input file path to chip8 rom.\n");
     }
+
+    D(debugMsg("Display resolution: %d x %d\n", disp_res.width, disp_res.height));
+
+    emulator emu;
+    emu.setRes(disp_res);
 
     emu.createGLXWindow();
 

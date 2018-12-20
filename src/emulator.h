@@ -41,4 +41,4 @@ private:
     ~emulator();
 };
 
-#endif
+#endif //EMULATOR_H

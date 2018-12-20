@@ -34,8 +34,6 @@ void errorMsg(const char* format_str, va_list vargs);
 void okMsg(const char* format_str, ...);
 void okMsg(const char* format_str, va_list vargs);
 void fatalError(int error_code, const char* format_string, ...);
-string build_error_message(const char* format_string, ...);
-string build_error_message(const char* format_string, va_list vargs);
 
 typedef struct{
     char type;

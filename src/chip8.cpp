@@ -80,6 +80,7 @@ void chip8::load(std::string file_path){
  */
 
 void chip8::run_tick() {
+
     uint16_t op = *((uint16_t*)  (memory + PROG_START_OFFSET + program_counter));
     switch(op & 0xFF00){
         case 0x0000:
@@ -91,12 +92,14 @@ void chip8::run_tick() {
                 case 0x0EE:
                     //ret
                     if(stack_pointer == -1){
-                        throw build_error_message("Ret with empty stack at address <0x%hx>.\n");
+                        string error_message = "Ret with empty stack at address <0x" + to_string(program_counter + PROG_START_OFFSET) + ">.\n";
+                        throw error_message;
                     }
                     program_counter = stack[stack_pointer--];
                     break;
                 default:
-                    throw build_error_message("Unknown opcode <0x%hx> at address <0x%hx>.\n", op, PROG_START_OFFSET + program_counter);
+                    string error_message = "Unknown opcode <0x" + to_string(op) + "> at address <0x" + to_string(PROG_START_OFFSET + program_counter) + ">.\n";
+                    throw error_message;
 
             }
             break;
@@ -160,8 +163,8 @@ void chip8::run_tick() {
                     v_regs[0xF] = static_cast<uint8_t>((Vx & 0x80)? 1 : 0);
                     Vx >>= 2;
                 default:
-                    throw build_error_message("Unknown opcode <0x%hx> at address <0x%hx>.\n", op, PROG_START_OFFSET + program_counter);
-            }
+                    string error_message = "Unknown opcode <0x" + to_string(op) + "> at address <0x" + to_string(PROG_START_OFFSET + program_counter) + ">.\n";
+                    throw error_message;            }
             break;
         case 0x9000:
             if(Vx != Vy){
@@ -189,7 +192,8 @@ void chip8::run_tick() {
                     //check if key not pressed
                     break;
                 default:
-                    throw build_error_message("Unknown opcode <0x%hx> at address <0x%hx>.\n", op, PROG_START_OFFSET + program_counter);
+                    string error_message = "Unknown opcode <0x" + to_string(op) + "> at address <0x" + to_string(PROG_START_OFFSET + program_counter) + ">.\n";
+                    throw error_message;            
             }
             break;
         case 0xF000:
@@ -218,22 +222,22 @@ void chip8::run_tick() {
                     memory[*i_reg + 2] = Vx % 10;
                     break;
                 case 0x55:
-                    for(uint8_t i = 0; i < 0x10; i++){
+                    for(uint8_t i = 0; i < 0x10; i++)
                         memory[*i_reg + i] = V(i); 
-                    }
                     break;
                 case 0x65:
-                    for(uint8_t i = 0; i < 0x10; i++){
+                    for(uint8_t i = 0; i < 0x10; i++)
                         V(i) = memory[*i_reg + i]; 
-                    }
                     break;
                 default:
-                    throw build_error_message("Unknown opcode <0x%hx> at address <0x%hx>.\n", op, PROG_START_OFFSET + program_counter);
+                    string error_message = "Unknown opcode <0x" + to_string(op) + "> at address <0x" + to_string(PROG_START_OFFSET + program_counter) + ">.\n";
+                    throw error_message;
             }
             break;
         default:
-            throw build_error_message("Unknown opcode <0x%hx> at address <0x%hx>.\n", op, PROG_START_OFFSET + program_counter);
-    }
+                    string error_message = "Unknown opcode <0x" + to_string(op) + "> at address <0x" + to_string(PROG_START_OFFSET + program_counter) + ">.\n";
+                    throw error_message;
+        }
     program_counter+=2;
 }
 

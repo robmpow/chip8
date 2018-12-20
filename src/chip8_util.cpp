@@ -49,22 +49,6 @@ void fatalError(int error_code, const char* format_string, ...){
     exit(error_code);
 }
 
-string build_error_message(const char* format_string, ...) {
-    char temp[2048];
-    va_list vargs;
-    va_start(vargs, format_string);
-    vsprintf(temp, format_string, vargs);
-    va_end(vargs);
-    return std::string(temp);
-}
-
-string build_error_message(const char* format_string, va_list vargs){
-    char temp[2048];
-    vsprintf(temp, format_string, vargs);
-    va_end(vargs);
-    return std::string(temp);
-}
-
 const char* file_typenames[] = {"block device",
                                 "character device",
                                 "directory",

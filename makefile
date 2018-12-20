@@ -2,7 +2,8 @@ CXX:= g++
 CXX_VERSION:= c++14
 SRCDIR:= src
 BUILDDIR:= build
-TARGET:= bin/chip8
+TARGETDIR:= bin
+TARGET:= chip8
 
 SRCEXT := cpp
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
@@ -11,20 +12,21 @@ OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CXXFLAGS := -Wall -Werror
 LIB := -lX11 -lGL -lXrender -lGLEW
 
-$(TARGET): $(OBJECTS)
+$(TARGETDIR)/$(TARGET): $(OBJECTS)
 	@echo " Linking..."
-	@echo " $(CXX) -std=$(CXX_VERSION) $^ -o $(TARGET) $(LIB)"; $(CXX) $^ -o $(TARGET) $(LIB)
+	@mkdir -p $(TARGETDIR)
+	@echo " $(CXX) -std=$(CXX_VERSION) $^ -o $(TARGETDIR)/$(TARGET) $(LIB)"; $(CXX) -std=$(CXX_VERSION) $^ -o $(TARGETDIR)/$(TARGET) $(LIB)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
-	@echo " $(CXX) -std=$(CXX_VERSION) $(CXXFLAGS) $(INC) -c -o $@ $<"; $(CXX) $(CXXFLAGS) $(INC) -c -o $@ $<
+	@echo " $(CXX) -std=$(CXX_VERSION) $(CXXFLAGS) $(INC) -c -o $@ $<"; $(CXX) -std=$(CXX_VERSION) $(CXXFLAGS) $(INC) -c -o $@ $<
 
 clean:
 	@echo " Cleaning..."; 
-	@echo " $(RM) -r $(BUILDDIR) $(TARGET)"; $(RM) -r $(BUILDDIR) $(TARGET)
+	@echo " $(RM) -r $(BUILDDIR) $(TARGETDIR)"; $(RM) -r $(BUILDDIR) $(TARGET)
 
 debug: clean
 debug: CXXFLAGS += -g -DDEBUG
-debug: $(TARGET)
+debug: $(TARGETDIR)/$(TARGET)
 
 .PHONY: clean

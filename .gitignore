@@ -36,3 +36,4 @@ sites
 bin/
 obj/
 .vscode/
+roms/
