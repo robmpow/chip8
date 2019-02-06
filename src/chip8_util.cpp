@@ -79,28 +79,28 @@ const char* fileExists(char* file_path){
     return (exists != -1)? fileType(buff.st_mode) : 0;
 }
 
-template<typename T, typename U>
-mapper<T, U>::mapper(T i_l, T i_u, U o_l, U o_u){
-    in_clamp_l = i_l;
-    in_clamp_u = i_u;
-    out_clamp_l = o_l;
-    out_clamp_u = o_u;
-}
+// template<typename T, typename U>
+// mapper<T, U>::mapper(T i_l, T i_u, U o_l, U o_u){
+//     in_clamp_l = i_l;
+//     in_clamp_u = i_u;
+//     out_clamp_l = o_l;
+//     out_clamp_u = o_u;
+// }
 
-template<typename T, typename U>
-typename enable_if<is_integral<U>::value || is_floating_point<U>::value, U>::type mapper<T, U>::map(T val){
-    if(val <= in_clamp_l)
-        return out_clamp_l;
-    if(val >= in_clamp_u)
-        return out_clamp_u;
-    return (U) (((double) val - in_clamp_l) * (out_clamp_u - out_clamp_l)) / (in_clamp_u - in_clamp_l);
-}
+// template<typename T, typename U>
+// typename enable_if<is_integral<U>::value || is_floating_point<U>::value, U>::type mapper<T, U>::map(T val){
+//     if(val <= in_clamp_l)
+//         return out_clamp_l;
+//     if(val >= in_clamp_u)
+//         return out_clamp_u;
+//     return (U) (((double) val - in_clamp_l) * (out_clamp_u - out_clamp_l)) / (in_clamp_u - in_clamp_l);
+// }
 
-template<typename T, typename U>
-typename enable_if<is_integral<T>::value || is_floating_point<T>::value, T>::type mapper<T, U>::unmap(U val){
-    if(val <= out_clamp_l)
-        return in_clamp_l;
-    if(val >= out_clamp_u)
-        return in_clamp_u;
-    return (T) (((double) val - out_clamp_l) * (in_clamp_u - in_clamp_l)) / (out_clamp_u - out_clamp_l);
-}
+// template<typename T, typename U>
+// typename enable_if<is_integral<T>::value || is_floating_point<T>::value, T>::type mapper<T, U>::unmap(U val){
+//     if(val <= out_clamp_l)
+//         return in_clamp_l;
+//     if(val >= out_clamp_u)
+//         return in_clamp_u;
+//     return (T) (((double) val - out_clamp_l) * (in_clamp_u - in_clamp_l)) / (out_clamp_u - out_clamp_l);
+// }

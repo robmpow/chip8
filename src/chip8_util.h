@@ -10,6 +10,8 @@
 #include <cstring>
 #include <cstdarg>
 #include <sys/stat.h>
+#include <chrono>
+#include <ctime>
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -19,44 +21,12 @@
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
-#ifdef DEBUG
-#define D(x) x
-#else
-#define D(x) 
-#endif
-
-using namespace std;
-
-void debugMsg(const char* format_str, ...);
-void debugMsg(const char* format_str, va_list vargs);
-void errorMsg(const char* format_str, ...);
-void errorMsg(const char* format_str, va_list vargs);
-void okMsg(const char* format_str, ...);
-void okMsg(const char* format_str, va_list vargs);
-void fatalError(int error_code, const char* format_string, ...);
-
-typedef struct{
-    char type;
-    char* type_long;
-} file_type_t;
+#define BIT_WIDTH(type) (8 * sizeof(type))
 
 extern const char* file_typenames[];
 
 extern const char* reg_file;
 
 const char* fileExists(char* file_path);
-
-template<typename T, typename U>
-class mapper{
-
-private:
-    T in_clamp_l, in_clamp_u;
-    U out_clamp_l, out_clamp_u;
-    
-public:
-    mapper(T i_l, T i_u, U o_l, U o_u);
-    typename enable_if<is_integral<U>::value || is_floating_point<U>::value, U>::type map(T value);
-    typename enable_if<is_integral<T>::value || is_floating_point<T>::value, T>::type unmap(U value);
-};
 
 #endif //CHIP8_UTIL_H

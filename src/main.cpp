@@ -3,150 +3,90 @@
  * Author: Robert Powell 
  */
 
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/Xos.h>
-#include <X11/Xatom.h>
-#include <X11/extensions/Xrender.h>
-#include <X11/XKBlib.h>
-#include <X11/keysym.h>
-
-#include <GL/glew.h>
-#include <GL/glx.h> 
-#include <GL/gl.h>
-#include <GL/glu.h>
-
 #include <iostream>
 #include <string>
 
 #include <cstdint>
-#include <cstdio>
-#include <cstdlib>
 #include <getopt.h>
-#include <cstring>
 #include <unordered_map>
+#include <set>
+#include <utility>
+#include <chrono>
+#include <unistd.h>
+#include <functional>
+#include <iomanip>
 
-#include "emulator.h"
 #include "chip8.h"
 #include "chip8_util.h"
 #include "ini_reader.h"
+#include "key_handler_impl.h"
+#include "chip8_emulator.h"
+#include "logger.hpp"
+#include "logger_impl.hpp"
 
-using namespace std;
-
-uint8_t colors[] = { 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF};
-
-uint8_t *bg_color = colors, *fg_color = colors+ 3;
-uint8_t *bg_red = bg_color, *bg_green = bg_color + 1, *bg_blue = bg_color+2;
-uint8_t *fg_red = fg_color, *fg_green = fg_color + 1, *fg_blue = fg_color+2;
-
-float pixel_maps[] = {0.0, 1.0,
-                      0.0, 1.0,
-                      0.0, 1.0,
-                      0.0, 1.0};
-
-float *r_map = pixel_maps, *g_map = pixel_maps + 2, *b_map = pixel_maps + 4, *a_map = pixel_maps + 6;                                                 
-
-// static void updateSurfaceTexture(GLuint tex_id, const GLvoid* tex_dat, uint tex_w, uint tex_h){
-
-//     glBindTexture(GL_TEXTURE_2D, tex_id);
-
-//     glPixelStorei(GL_UNPACK_ALIGNMENT,1);
-
-//     glPixelMapfv(GL_PIXEL_MAP_I_TO_R, 2, r_map);
-//     glPixelMapfv(GL_PIXEL_MAP_I_TO_G, 2, g_map);
-//     glPixelMapfv(GL_PIXEL_MAP_I_TO_B, 2, b_map);
-//     glPixelMapfv(GL_PIXEL_MAP_I_TO_A, 2, a_map);
-
-//     glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,tex_w,tex_h,0,GL_COLOR_INDEX,GL_BITMAP, tex_dat);
-
-//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-//     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-//     glBindTexture(GL_TEXTURE_2D, 0);
-
-// }
-
-// static void updateColorMaps(mapper<uint8_t, float> pixel_mapper){
-//     for(int i=0; i < 3; i++){
-//         pixel_maps[i * 2] = pixel_mapper.map(colors[i]);
-//         pixel_maps[i * 2 + 1] = pixel_mapper.map(colors[i+3]);
-//     }
-// }
-
-// static void drawQuad(GLuint tex_id){
-
-//     glClear(GL_COLOR_BUFFER_BIT);
-//     glBindTexture(GL_TEXTURE_2D, tex_id);
-//     glEnable(GL_TEXTURE_2D);
-//     glBegin(GL_QUADS);
-//     glTexCoord2i(0, 0); glVertex2i(0, win_h);
-//     glTexCoord2i(0, 1); glVertex2i(0, 0);
-//     glTexCoord2i(1, 1); glVertex2i(win_w, 0);
-//     glTexCoord2i(1, 0); glVertex2i(win_w, win_h);
-//     glEnd();
-//     glDisable(GL_TEXTURE_2D);
-//     glBindTexture(GL_TEXTURE_2D, 0);
-// }
-
-// static void getKeyMappings(){
-
-// }
-
-uint8_t chip8_memory[TOTAL_MEM_SIZE];
-
-uint8_t* allocate(){
-    return chip8_memory;
-}
-
-void deallocate(uint8_t* mem){
-    return;
-}
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 
 static const option opts[] =   {{"res",     required_argument,  0,  'r'},
-                                {"bind",    required_argument,  0,  'b'},
+                                {"log",     optional_argument,  0,  'l'},
                                 {"help",    no_argument,        0,  'h'},
                                 {0,         0,                  0,  0}};
 
-static const char usage[] = "usage: %s rom_file [-r | -res widthxheight]\n\t-r | -res wxh: sets the starting display resolution width to w and height to h.";
+static const char usage[] = "usage: %s rom_file [-r | -res widthxheight] [-l | --log filepath] [-h | --help]\n"
+                            "\t-r | --res wxh: sets the starting display resolution width to w and height to h.\n"
+                            "\t-l | --log filepath: enables logging, if filepath is provided the logfile is set to filepath.\n";
+
+namespace arg = std::placeholders;
+
+logger::logger<logger::logger_interface_impl> chip8_logger;
 
 int main(int argc, char** argv){
 
-    res_t disp_res;
+    std::pair<int, int> resolution;
+    std::pair<SDL_Color, SDL_Color> palette;
+    std::unordered_map<key_enum, key_action> bind_map;
 
-    try{
-        ini_reader config("bin/config.ini");
-        disp_res.width = config.getInt("Display", "disp_width", 640);
-        disp_res.height = config.getInt("Display", "disp_height", 480);
-    }
-    catch(string error){
-        fatalError(1, error.c_str());
-    }
+    union{
+        bitfield<uint8_t, 0, 1> log;
+        bitfield<uint8_t, 0, 8> all;
+    } flags;
+
+    flags.all = 0;
 
     int opt;
-    char* rom_path = 0;
+    std::string rom_path;
     opterr = 0;
     while((opt = getopt_long(argc, argv, "r:h", opts, NULL)) != -1){
         switch(opt){
             case 'r':
                 if(optarg){
                     char* split;
-                    disp_res.width = strtoul(optarg, &split, 10);
+                    resolution.first = strtoul(optarg, &split, 10);
                     if(*split){
-                        disp_res.height = strtoul(split + 1, NULL, 10);
+                        resolution.second = strtoul(split + 1, NULL, 10);
                     }
-                    else fatalError(1, "Error: [-r | -res wxh ]: invalid screen resolution format.\n");
-                    if(!disp_res.width || !disp_res.height){
-                        fatalError(1, "Error: [-r | -res wxh ]: invalid screen resolution format.\n");
+                    else{
+                        chip8_logger.log<logger::log_fatal>("Error: [-r | -res wxh ]: invalid screen resolution format.\n");
+                        exit(-1);
                     }
-                    D(debugMsg("Screen res set width: %d, height: %d.\n", disp_res.width, disp_res.height));
+                    if(!resolution.first || !resolution.second){
+                        chip8_logger.log<logger::log_fatal>("Error: [-r | -res wxh ]: invalid screen resolution format.\n");
+                        exit(-1);
+                    }
                 }
-                else fatalError(1, "Error: [-r | --res wxh]: missing screen resolution argument.\n");
+                else{
+                    chip8_logger.log<logger::log_fatal>("Error: [-r | --res wxh]: missing screen resolution argument.\n");
+                    exit(-1);
+                }
                 break;
             case 'h':
                 printf(usage, argv[0]);
                 exit(0);
+            case 'l':
+                flags.log |= 1;
+                break;
             case '?':
-                errorMsg("Error: %s: flag not recognized.\n", argv[optind - 1]);
+                chip8_logger.log<logger::log_fatal>("Error: Unkownn option '", static_cast<char>(optopt), "'.\n");
                 printf(usage, argv[0]);
                 exit(1);
             default:
@@ -158,174 +98,147 @@ int main(int argc, char** argv){
         const char* type;
         if((type = fileExists(argv[optind])) != reg_file){
             if(type){
-                fatalError(1, "Error: %s: File type %s is not supported.\n", argv[optind], type);
+                chip8_logger.log<logger::log_fatal>("Error: ", argv[optind], ": File type ", type, " is not supported.\n");
+                exit(-1);
             }
-            fatalError(1, "Error: %s: file not found.\n", argv[optind]);
+            chip8_logger.log<logger::log_fatal>("Error: ", argv[optind], ": file not found.\n");
+            exit(-1);
         }
         rom_path = argv[optind];
-        D(debugMsg("Rom file: %s\n", rom_path));
         optind++;
     }
-    if(!rom_path){
-        fatalError(1, "Error: No input file path to chip8 rom.\n");
+    if(rom_path.empty()){
+        chip8_logger.log<logger::log_fatal>("Error: No input file path to chip8 rom.\n");
+        exit(-1);
     }
 
-    D(debugMsg("Display resolution: %d x %d\n", disp_res.width, disp_res.height));
+    if(flags.log){
+        chip8_logger.set_log_file("chip8" + rom_path);
+    }
 
-    emulator emu;
-    emu.setRes(disp_res);
+    try{
 
-    emu.createGLXWindow();
+        const std::unordered_map<std::string, key_action> chip8_key_binds({ {"key_ch8_0",       KEY_CH8_0},
+                                                                            {"key_ch8_1",       KEY_CH8_1},
+                                                                            {"key_ch8_2",       KEY_CH8_2},
+                                                                            {"key_ch8_3",       KEY_CH8_3},
+                                                                            {"key_ch8_4",       KEY_CH8_4},
+                                                                            {"key_ch8_5",       KEY_CH8_5},
+                                                                            {"key_ch8_6",       KEY_CH8_6},
+                                                                            {"key_ch8_7",       KEY_CH8_7},
+                                                                            {"key_ch8_8",       KEY_CH8_8},
+                                                                            {"key_ch8_9",       KEY_CH8_9},
+                                                                            {"key_ch8_a",       KEY_CH8_A},
+                                                                            {"key_ch8_b",       KEY_CH8_B},
+                                                                            {"key_ch8_c",       KEY_CH8_C},
+                                                                            {"key_ch8_d",       KEY_CH8_D},
+                                                                            {"key_ch8_e",       KEY_CH8_E},
+                                                                            {"key_ch8_f",       KEY_CH8_F},
+                                                                            {"key_emu_pause",   KEY_EMU_PAUSE},
+                                                                            {"key_emu_reset",   KEY_EMU_RESET},});
 
-    chip8 ch8((uint) 0, (chip8io*) 0);
-    ch8.reset();
+        ini_reader config("res/config.ini");
 
-    int x11_event_fd = ConnectionNumber(emu.getDisplay());
-    fd_set watch_set;
-    timeval timeout = { 0, CLOCK_USEC};
+        resolution.first = config.getInt("Display", "disp_width", 640);
+        resolution.second = config.getInt("Display", "disp_height", 480);
 
-    FD_ZERO(&watch_set);
-    FD_SET(x11_event_fd, &watch_set);
+        int fg_raw = config.getInt("Display", "disp_fg_color", 0x000000);
+        int bg_raw = config.getInt("Display", "disp_bg_color", 0xFFFFFF);
 
-    uint8_t running = 1;
-    while(running){
-        int res = select(x11_event_fd + 1, &watch_set, NULL, NULL, &timeout);
-        if(res && res != -1){
-            /** Process X11 event **/
-            XEvent event;
-            XNextEvent(emu.getDisplay(), &event);
-            D(debugMsg("Event: %d\n", event.type));
-            switch(event.type){
-                case Expose:
-                    //Handle expose/window update
-                    break;
-                case KeyPress:
-                    std::cout << "Key: " << XKeysymToString(XkbKeycodeToKeysym(emu.getDisplay(), event.xkey.keycode, 0, 0)) << std::endl;
-                    //Handle key press
-                    break;
-                case KeyRelease:
-                    //Handle Key release
-                    break;
-                case ClientMessage:
-                    running = 0;
-                    break;
-                default:
-                    break;
+        palette.second.r = (bg_raw >> 16) & 0xFF;
+        palette.second.g = (bg_raw >> 8) & 0xFF;
+        palette.second.b = bg_raw & 0xFF;
+        palette.second.a = 0xFF;
+
+        palette.first.r = (fg_raw >> 16) & 0xFF;
+        palette.first.g = (fg_raw >> 8) & 0xFF;
+        palette.first.b = fg_raw & 0xFF;
+        palette.first.a = 0xFF;
+
+        auto chip8_ini_binds = config.getHeaderValues("Keys");
+
+        for(auto ini_binds_it = chip8_ini_binds.begin(); ini_binds_it != chip8_ini_binds.end(); ini_binds_it++){
+            if(chip8_key_binds.count(ini_binds_it->first)){ 
+                key_enum bind = {0,KMOD_NONE};
+
+                std::size_t ind;
+                if((ind = ini_binds_it->second.find('+')) != std::string::npos){
+                    if(ind == 0 || ind == ini_binds_it->second.size()){
+                        chip8_logger.log<logger::log_fatal>("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", ini_binds_it->second, "' not recognized\n", logger::endl);
+                        exit(-1);
+                    }
+
+                    std::string bind_key0 = ini_binds_it->second.substr(ini_binds_it->second.find_first_not_of(" "),            ini_binds_it->second.find_last_not_of(" ", ind) - 1);
+                    std::string bind_key1 = ini_binds_it->second.substr(ini_binds_it->second.find_first_not_of(" ", ind + 1),   ini_binds_it->second.find_last_not_of(" ") - 1);
+
+                    if((bind.modifier = lookUpSDLKeymod(bind_key0)) != KMOD_NONE){
+                        if((bind.key = lookUpSDLKeycode(bind_key1)) == SDLK_UNKNOWN){
+                            chip8_logger.log<logger::log_fatal>("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", bind_key1, "' not recognized\n", logger::endl);
+                            exit(-1);
+                        }
+                    
+                    }
+                    else if((bind.key = lookUpSDLKeycode(bind_key0)) != SDLK_UNKNOWN){
+                        if((bind.modifier = lookUpSDLKeymod(bind_key1)) == KMOD_NONE){
+                            chip8_logger.log<logger::log_fatal>("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", bind_key1, "' not recognized\n", logger::endl);  
+                            exit(-1);
+
+                        }
+                        else{
+                            chip8_logger.log<logger::log_fatal>("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", bind_key0, "' not recognized\n", logger::endl);  
+                            exit(-1);
+                        }
+                    }
+                    else{
+                        if((bind.key = lookUpSDLKeycode(ini_binds_it->second)) == SDLK_UNKNOWN){
+                            chip8_logger.log<logger::log_fatal>("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", ini_binds_it->second, "' not recognized", logger::endl);
+                            exit(-1);  
+                        }
+                    }
+
+                    bind_map.emplace(bind, chip8_key_binds.find(ini_binds_it->first)->second);
+                }
+            }
+            else{
+                chip8_logger.log<logger::log_fatal>("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', bind '", ini_binds_it->second, "' not recognized", logger::endl);
+                exit(-1);
             }
         }
-        else{
-            /** Select timeout run chip8 tick **/
-
-            /** Reset timeval struct and re-add event queue fd to fd set. **/
-            timeout.tv_usec = CLOCK_USEC;
-            FD_ZERO(&watch_set);
-            FD_SET(x11_event_fd, &watch_set);
-        }
+    }
+    catch(std::string error){
+        chip8_logger.log<logger::log_fatal>("INI file parse error: ", error, logger::endl);
+        exit(-1);  
     }
 
-    // GLenum err_code = glewInit();
-    // if(err_code != GLEW_OK){
-    //     fatalError(1, "GLEW initialization failed. <%d: %s>\n", err_code, glewGetErrorString(err_code));
-    // }
+    std::cout << std::endl;
 
-    // Window win_dummy;
-    // int dummy;
-    // uint udummy;
-    // XGetGeometry(display, window, &win_dummy, &dummy, &dummy, &win_w, &win_h, &udummy, &udummy);
-    // // glViewport(0, 0, win_w, win_h);
+    SDL_Log("Screen res set width: %d, height: %d.\n", resolution.first, resolution.second);
+    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) == -1){
+        chip8_logger.log<logger::log_fatal>("SDL Error:", SDL_GetError(), logger::endl);
+    }
 
-    // glMatrixMode(GL_PROJECTION);
-    // glOrtho(0, win_w, 0, win_h, -1, 1);
-    // glMatrixMode(GL_MODELVIEW);
+    if(TTF_Init() == -1){
+        
+    }
 
-    // GLuint tex_id;
-    // glGenTextures(1, &tex_id);
+    chip8_logger.log<logger::log_info>("Resolution: ", resolution.first, "x", resolution.second, logger::endl);
+    chip8_logger.log<logger::log_info>("Rom: ", rom_path, logger::endl);
+    chip8_logger.log<logger::log_info>("Paletter: fg=0x", std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.first.r),
+                                                          std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.first.g),
+                                                          std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.first.b),
+                                                          std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.first.a),
+                                                " bg=0x", std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.second.r),
+                                                          std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.second.g),
+                                                          std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.second.b),
+                                                          std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.second.a), logger::endl);
 
-    // updateSurfaceTexture(tex_id, test_bitmap, 64, 32);
+    chip8_emulator emu(resolution, palette, rom_path, bind_map);
 
-    // drawQuad(tex_id);
-    // glXSwapBuffers ( display, window );
+    emu.run();
 
-    // XEvent event;
+    TTF_Quit();
 
-    // mapper<uint8_t, float> pixel_mapper(0, 255, 0.f, 1.f);
-
-    // //unsigned int key_state = 0;
-    // //long long timer = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-
-    // D(DEBUG, "FG: R: %d, G: %d, B: %d; BG: R: %d, G: %d, B: %d;", colors[0], colors[1], colors[2], colors[3], colors[4], colors[5]);
-    // bool running = 1;
-    // while (running) {
-    //     XNextEvent(display, (XEvent *)&event);
-    //     switch ( event.type ) {
-    //         case Expose:
-    //         {
-    //             XGetGeometry(display, window, &win_dummy, &dummy, &dummy, &win_w, &win_h, &udummy, &udummy);
-    //             break;
-    //         }
-    //         case KeyPress:
-    //             //key_state |= 1 << (event.xkey.keycode - 24);
-    //             //increase color value
-    //             if(event.xkey.keycode >= 24 && event.xkey.keycode <= 29){
-    //                 colors[event.xkey.keycode - 24] = (colors[event.xkey.keycode - 24] == 255)? 255 : colors[event.xkey.keycode - 24] + 1;
-    //                 updateColorMaps(pixel_mapper);
-    //             }
-    //             else if(event.xkey.keycode >= 38 && event.xkey.keycode <= 43){
-    //                 colors[event.xkey.keycode - 38] = (colors[event.xkey.keycode - 38] == 0)? 0 : colors[event.xkey.keycode - 38] - 1;
-    //                 updateColorMaps(pixel_mapper);
-    //             }
-
-    //             D(DEBUG, "\rFG: R: %*d, G: %*d, B: %*d; BG: R: %*d, G: %*d, B: %*d;", 3, colors[0], 3, colors[1], 3, colors[2], 3, colors[3], 3, colors[4], 3, colors[5]);
-    //             break;
-    //         case KeyRelease:
-    //             //key_state &= 0 << (event.xkey.keycode - 24);
-    //             break;
-    //         case ClientMessage:
-    //             running = 0;
-    //             break;
-    //         default:
-    //             break;
-    //     }
-
-    //     // long long current_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    //     // if(key_state && !timer){
-    //     //     timer = current_time;
-    //     // }
-    //     // else if(key_state && timer){
-    //     //     if(current_time - timer > 500){
-    //     //         unsigned int keys = key_state, index = 0;
-    //     //         while (keys){
-    //     //             if(keys & 0x1){
-    //     //                 if(index < 6 && !(key_state & (1 << (index + 12)))){
-    //     //                     colors[index] = (colors[index] == 255)? colors[index] + 1 : 255;
-    //     //                 }
-    //     //                 if(index >= 12 && index <=18 && !(key_state & (1 << (index - 12)))){
-    //     //                     colors[index-12] = (colors[index - 12] == 0)? colors[index - 12] - 1 : 0;
-    //     //                 }
-    //     //             }
-    //     //         }
-    //     //         updateColorMaps(pixel_mapper);
-    //     //         timer = current_time;
-    //     //     }
-    //     // }
-    //     // else if(!key_state && timer){
-    //     //     timer = 0;
-    //     // }
-
-    //     // long long current_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    //     // if(current_time - timer > 500){
-    //     //     for(int i=0; i<6; i++){
-    //     //         colors[i] += 1;
-    //     //     }
-    //     //     timer = current_time;
-    //     // }
-
-    //     updateColorMaps(pixel_mapper);
-
-    //     updateSurfaceTexture(tex_id, test_bitmap, 64, 32);
-    //     drawQuad(tex_id);
-    //     glXSwapBuffers(display, window);
-    // }
+    SDL_Quit();
 
     return(0);
 
