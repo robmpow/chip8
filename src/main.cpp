@@ -21,7 +21,6 @@
 #include "ini_reader.h"
 #include "key_handler_impl.h"
 #include "chip8_emulator.h"
-#include "logger.hpp"
 #include "logger_impl.hpp"
 
 #include <SDL2/SDL.h>
@@ -37,8 +36,6 @@ static const char usage[] = "usage: %s rom_file [-r | -res widthxheight] [-l | -
                             "\t-l | --log filepath: enables logging, if filepath is provided the logfile is set to filepath.\n";
 
 namespace arg = std::placeholders;
-
-logger::logger<logger::logger_interface_impl> chip8_logger;
 
 int main(int argc, char** argv){
 
@@ -66,16 +63,16 @@ int main(int argc, char** argv){
                         resolution.second = strtoul(split + 1, NULL, 10);
                     }
                     else{
-                        chip8_logger.log<logger::log_fatal>("Error: [-r | -res wxh ]: invalid screen resolution format.\n");
+                        LOG_FATAL("Error: [-r | -res wxh ]: invalid screen resolution format.\n");
                         exit(-1);
                     }
                     if(!resolution.first || !resolution.second){
-                        chip8_logger.log<logger::log_fatal>("Error: [-r | -res wxh ]: invalid screen resolution format.\n");
+                        LOG_FATAL("Error: [-r | -res wxh ]: invalid screen resolution format.\n");
                         exit(-1);
                     }
                 }
                 else{
-                    chip8_logger.log<logger::log_fatal>("Error: [-r | --res wxh]: missing screen resolution argument.\n");
+                    LOG_FATAL("Error: [-r | --res wxh]: missing screen resolution argument.\n");
                     exit(-1);
                 }
                 break;
@@ -86,7 +83,7 @@ int main(int argc, char** argv){
                 flags.log |= 1;
                 break;
             case '?':
-                chip8_logger.log<logger::log_fatal>("Error: Unkownn option '", static_cast<char>(optopt), "'.\n");
+                LOG_FATAL("Error: Unkownn option '", static_cast<char>(optopt), "'.\n");
                 printf(usage, argv[0]);
                 exit(1);
             default:
@@ -98,17 +95,17 @@ int main(int argc, char** argv){
         const char* type;
         if((type = fileExists(argv[optind])) != reg_file){
             if(type){
-                chip8_logger.log<logger::log_fatal>("Error: ", argv[optind], ": File type ", type, " is not supported.\n");
+                LOG_FATAL("Error: ", argv[optind], ": File type ", type, " is not supported.\n");
                 exit(-1);
             }
-            chip8_logger.log<logger::log_fatal>("Error: ", argv[optind], ": file not found.\n");
+            LOG_FATAL("Error: ", argv[optind], ": file not found.\n");
             exit(-1);
         }
         rom_path = argv[optind];
         optind++;
     }
     if(rom_path.empty()){
-        chip8_logger.log<logger::log_fatal>("Error: No input file path to chip8 rom.\n");
+        LOG_FATAL("Error: No input file path to chip8 rom.\n");
         exit(-1);
     }
 
@@ -162,51 +159,53 @@ int main(int argc, char** argv){
                 key_enum bind = {0,KMOD_NONE};
 
                 std::size_t ind;
-                if((ind = ini_binds_it->second.find('+')) != std::string::npos){
-                    if(ind == 0 || ind == ini_binds_it->second.size()){
-                        chip8_logger.log<logger::log_fatal>("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", ini_binds_it->second, "' not recognized\n", logger::endl);
+                if((ind = ini_binds_it->second.find("//")) != std::string::npos){
+                    if(ind == 0 || ind == ini_binds_it->second.size() - 2){
+                        LOG_FATAL("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", ini_binds_it->second, "' not recognized\n", logger::endl);
                         exit(-1);
                     }
 
-                    std::string bind_key0 = ini_binds_it->second.substr(ini_binds_it->second.find_first_not_of(" "),            ini_binds_it->second.find_last_not_of(" ", ind) - 1);
-                    std::string bind_key1 = ini_binds_it->second.substr(ini_binds_it->second.find_first_not_of(" ", ind + 1),   ini_binds_it->second.find_last_not_of(" ") - 1);
+                    std::string bind_key0 = ini_binds_it->second.substr(ini_binds_it->second.find_first_not_of(" "),            ini_binds_it->second.find_last_not_of(" ", ind - 2) + 1);
+                    std::string bind_key1 = ini_binds_it->second.substr(ini_binds_it->second.find_first_not_of(" ", ind + 2),   ini_binds_it->second.find_last_not_of(" ") + 1);
 
                     if((bind.modifier = lookUpSDLKeymod(bind_key0)) != KMOD_NONE){
                         if((bind.key = lookUpSDLKeycode(bind_key1)) == SDLK_UNKNOWN){
-                            chip8_logger.log<logger::log_fatal>("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", bind_key1, "' not recognized\n", logger::endl);
+                            LOG_FATAL("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", bind_key1, "' not recognized\n", logger::endl);
                             exit(-1);
                         }
                     
                     }
                     else if((bind.key = lookUpSDLKeycode(bind_key0)) != SDLK_UNKNOWN){
                         if((bind.modifier = lookUpSDLKeymod(bind_key1)) == KMOD_NONE){
-                            chip8_logger.log<logger::log_fatal>("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", bind_key1, "' not recognized\n", logger::endl);  
-                            exit(-1);
-
-                        }
-                        else{
-                            chip8_logger.log<logger::log_fatal>("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", bind_key0, "' not recognized\n", logger::endl);  
+                            LOG_FATAL("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", bind_key1, "' not recognized\n", logger::endl);  
                             exit(-1);
                         }
                     }
                     else{
                         if((bind.key = lookUpSDLKeycode(ini_binds_it->second)) == SDLK_UNKNOWN){
-                            chip8_logger.log<logger::log_fatal>("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", ini_binds_it->second, "' not recognized", logger::endl);
+                            LOG_FATAL("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", ini_binds_it->second, "' not recognized", logger::endl);
                             exit(-1);  
                         }
                     }
 
                     bind_map.emplace(bind, chip8_key_binds.find(ini_binds_it->first)->second);
                 }
+                else if((bind.key = lookUpSDLKeycode(ini_binds_it->second)) != SDLK_UNKNOWN){
+                    bind_map.emplace(bind, chip8_key_binds.find(ini_binds_it->first)->second);
+                }
+                else{
+                    LOG_FATAL("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key '", ini_binds_it->second, "' not recognized", logger::endl);
+                    exit(-1);  
+                }
             }
             else{
-                chip8_logger.log<logger::log_fatal>("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', bind '", ini_binds_it->second, "' not recognized", logger::endl);
+                LOG_FATAL("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', bind '", ini_binds_it->second, "' not recognized", logger::endl);
                 exit(-1);
             }
         }
     }
     catch(std::string error){
-        chip8_logger.log<logger::log_fatal>("INI file parse error: ", error, logger::endl);
+        LOG_FATAL("INI file parse error: ", error, logger::endl);
         exit(-1);  
     }
 
@@ -214,16 +213,16 @@ int main(int argc, char** argv){
 
     SDL_Log("Screen res set width: %d, height: %d.\n", resolution.first, resolution.second);
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) == -1){
-        chip8_logger.log<logger::log_fatal>("SDL Error:", SDL_GetError(), logger::endl);
+        LOG_FATAL("SDL Error:", SDL_GetError(), logger::endl);
     }
 
     if(TTF_Init() == -1){
         
     }
 
-    chip8_logger.log<logger::log_info>("Resolution: ", resolution.first, "x", resolution.second, logger::endl);
-    chip8_logger.log<logger::log_info>("Rom: ", rom_path, logger::endl);
-    chip8_logger.log<logger::log_info>("Paletter: fg=0x", std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.first.r),
+    chip8_logger.log<logger::log_trace>("Resolution: ", resolution.first, "x", resolution.second, logger::endl);
+    chip8_logger.log<logger::log_trace>("Rom: ", rom_path, logger::endl);
+    chip8_logger.log<logger::log_trace>("Palette: fg=0x", std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.first.r),
                                                           std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.first.g),
                                                           std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.first.b),
                                                           std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.first.a),
@@ -232,7 +231,7 @@ int main(int argc, char** argv){
                                                           std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.second.b),
                                                           std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.second.a), logger::endl);
 
-    chip8_emulator emu(resolution, palette, rom_path, bind_map);
+    chip8_emulator emu(resolution, palette, rom_path, bind_map, true);
 
     emu.run();
 

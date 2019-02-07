@@ -42,7 +42,7 @@ namespace logger {
         protected:
             log_level level;    
             T* log_interface = NULL;
-            uint32_t log_line = 0;
+            static uint32_t log_line;
             bool color = true;
 
             std::string get_log_heading(log_level ll){
@@ -115,5 +115,8 @@ namespace logger {
                 }
             }
     };
+
+    template<typename T>
+    uint32_t logger<T>::log_line = 0;
 }
 

@@ -52,7 +52,7 @@ private:
     void handle_reset(bool press_state, bool repeat);
 
 public:
-    chip8_emulator(std::pair<int, int>& resolution, std::pair<SDL_Color, SDL_Color>& palette, std::string& rom_path, std::unordered_map<key_enum, key_action> binds);
+    chip8_emulator(std::pair<int, int>& resolution, std::pair<SDL_Color, SDL_Color>& palette, std::string& rom_path, std::unordered_map<key_enum, key_action> binds, bool seed_chip8_inst);
     void run();
     ~chip8_emulator();
 };

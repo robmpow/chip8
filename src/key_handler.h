@@ -8,13 +8,21 @@
 #include <SDL2/SDL_keycode.h>
 #include <SDL2/SDL_keyboard.h>
 #include <iostream>
+#include <sstream>
+
+std::string get_kmod_name(uint16_t mods);
 
 struct key_enum{
     SDL_Keycode key;
-    uint32_t modifier;
+    uint16_t modifier;
 
     bool operator==(const key_enum& other) const{
         return key == other.key && (modifier == other.modifier || (modifier & other.modifier));
+    }
+    template<typename T>
+    friend std::ostream& operator << (std::ostream& os, T &t){
+        os << SDL_GetKeyName(t.key) << ":" << get_kmod_name(t.modifier);
+        return os;
     }
 };
 
@@ -26,7 +34,7 @@ struct std::hash<key_enum>{
 };
 
 SDL_Keycode lookUpSDLKeycode(std::string key_name);
-int32_t lookUpSDLKeymod(std::string mod_name);
+uint16_t lookUpSDLKeymod(std::string mod_name);
 
 template<class T, typename U, size_t MAX_ACTIONS>
 class key_handler{

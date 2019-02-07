@@ -1,7 +1,38 @@
 #include "key_handler.h"
 
-int32_t lookUpSDLKeymod(std::string mod_name){
-    static std::unordered_map<std::string, int32_t> keymod_map({    {"LSHIFT",   KMOD_LSHIFT},
+std::string get_kmod_name(uint16_t mods){
+    const std::array<std::string, 0xF> mod_name({"LSHIFT",
+                                                 "RSHIFT",
+                                                 "UNKNOWN",
+                                                 "UNKNOWN",
+                                                 "UNKNOWN",
+                                                 "UNKNOWN",
+                                                 "LCTRL",
+                                                 "RCTRL",
+                                                 "LALT",
+                                                 "RALT",
+                                                 "LGUI",
+                                                 "RGUI",
+                                                 "NUM",
+                                                 "CAPS",
+                                                 "MODE"}); 
+    if(!mods){
+        return "KMOD_NONE";
+    }
+    std::stringstream ss;
+    for(int i = 0; 1 << i <= KMOD_MODE; i++){
+        if(mods & (1 << i)){
+            if(ss.rdbuf()->in_avail() != 0){
+                ss << "|";
+            }
+            ss << mod_name[i];
+        }
+    }
+    return ss.str();
+}
+
+uint16_t lookUpSDLKeymod(std::string mod_name){
+    static std::unordered_map<std::string, uint16_t> keymod_map({    {"LSHIFT",   KMOD_LSHIFT},
                                                                     {"RSHIFT",   KMOD_RSHIFT},
                                                                     {"LCTRL",    KMOD_LCTRL},
                                                                     {"RCTRL",    KMOD_RCTRL},

@@ -46,14 +46,18 @@ uint32_t mapColorFormat<SDL_PIXELFORMAT_RGBA8888>(SDL_Color& color){
 
 namespace arg = std::placeholders;
 
-#ifdef NO_SEED
-    chip8_emulator::chip8_emulator(std::pair<int, int>& resolution, std::pair<SDL_Color, SDL_Color>& palette, std::string& rom_path, std::unordered_map<key_enum, key_action> binds) : running(true), chip8_running(true), chip8_paused(false), rom_path(rom_path), chip8_instance(0, rom_path), input_handler(binds),{
-#else
-    chip8_emulator::chip8_emulator(std::pair<int, int>& resolution, std::pair<SDL_Color, SDL_Color>& palette, std::string& rom_path, std::unordered_map<key_enum, key_action> binds) : running(true), chip8_running(true), chip8_paused(false), rom_path(rom_path), chip8_instance(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()), rom_path), input_handler(binds){
-#endif
+chip8_emulator::chip8_emulator(std::pair<int, int>& resolution, std::pair<SDL_Color, SDL_Color>& palette, std::string& rom_path, std::unordered_map<key_enum, key_action> binds, bool seed_chip8_inst) : running(true), 
+                                                                                                                                                                                                         chip8_running(true), 
+                                                                                                                                                                                                         chip8_paused(false), 
+                                                                                                                                                                                                         rom_path(rom_path), 
+                                                                                                                                                                                                         chip8_instance((seed_chip8_inst)? std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) : 0, rom_path), 
+                                                                                                                                                                                                         input_handler(binds){
 
     this->window = SDL_CreateWindow("Chip8 Emu", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, resolution.first, resolution.second, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    LOG_TRACE("chip8_emulator: window created", logger::endl);
+
     this->renderer = SDL_CreateRenderer( window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_TARGETTEXTURE);
+    LOG_TRACE("chip8_emulator: renderer created", logger::endl);
 
     int render_target_w, render_target_h;
     SDL_GetRendererOutputSize(renderer, &render_target_w, &render_target_h);
@@ -64,7 +68,7 @@ namespace arg = std::placeholders;
 
     frame_tex_bg_color =    mapColorFormat<SDL_PIXELFORMAT_RGBA8888>(palette.second);
 
-    //chip8_logger.log<logger::log_info>("Frame Foreground color: 0x", std::hex, std::setw(8), std::setfill('0'), frame_tex_fg_color, "; Background color: ", std::hex, std::setw(8), std::setfill('0'), frame_tex_bg_color, "\n");
+    chip8_logger.log<logger::log_info>("Frame Foreground color: 0x", std::hex, std::setw(8), std::setfill('0'), frame_tex_fg_color, "; Background color: ", std::hex, std::setw(8), std::setfill('0'), frame_tex_bg_color, "\n");
 
     frame_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 64, 32);
 
@@ -79,7 +83,7 @@ namespace arg = std::placeholders;
     uint32_t pause_bmp_fg_color = SDL_MapRGBA(pause_surface->format, 0xFF, 0xFF, 0xFF, 0xFF);
     uint32_t pause_bmp_bg_color = SDL_MapRGBA(pause_surface->format, 0x00, 0x00, 0x00, 0xFF);
 
-    //chip8_logger.log<logger::log_info>("Frame Foreground color: 0x", std::hex, std::setw(8), std::setfill('0'), pause_bmp_fg_color, "; Background color: ", std::hex, std::setw(8), std::setfill('0'), pause_bmp_bg_color, "\n");
+    chip8_logger.log<logger::log_info>("Frame Foreground color: 0x", std::hex, std::setw(8), std::setfill('0'), pause_bmp_fg_color, "; Background color: ", std::hex, std::setw(8), std::setfill('0'), pause_bmp_bg_color, "\n");
 
 
     if(frame_tex_fg_color != pause_bmp_fg_color || frame_tex_bg_color != pause_bmp_bg_color){

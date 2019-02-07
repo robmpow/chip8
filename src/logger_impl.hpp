@@ -2,6 +2,14 @@
 
 #include "logger.hpp"
 
+#define LOG(level)      chip8_logger.log<level>
+#define LOG_FATAL       chip8_logger.log< logger::log_fatal >
+#define LOG_ERROR       chip8_logger.log< logger::log_error >
+#define LOG_WARNING     chip8_logger.log< logger::log_warning >
+#define LOG_DEBUG       chip8_logger.log< logger::log_debug >
+#define LOG_TRACE       chip8_logger.log< logger::log_trace >
+#define LOG_INFO        chip8_logger.log< logger::log_info >
+
 namespace logger{
 
     class logger_interface_impl : public logger_interface{
@@ -42,3 +50,5 @@ namespace logger{
             }
     };
 }
+
+static logger::logger<logger::logger_interface_impl> chip8_logger;
