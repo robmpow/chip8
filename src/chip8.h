@@ -14,7 +14,7 @@
 #define MAIN_MEM_SIZE       0x1000
 #define PROG_START_OFFSET   0x0200
 #define NUM_V_REG           0x0010
-#define STACK_SIZE          0x0020
+#define STACK_SIZE          0x0010
 #define DISP_SIZE           0x0100
 
 #define DISP_X              0x0040
@@ -34,6 +34,7 @@
 union tick_result{
     bitfield<uint8_t, 0, 1> display_update;
     bitfield<uint8_t, 1, 1> sound_state;
+    bitfield<uint8_t, 2, 1> error;
     bitfield<uint8_t, 0, 2> all;
 };
 
@@ -89,7 +90,7 @@ private:
     uint8_t dt_reg;
     uint8_t st_reg;
 
-    int8_t stack_pointer;
+    uint8_t stack_pointer : 4;
     uint16_t program_counter;
 
     uint8_t t_counter;

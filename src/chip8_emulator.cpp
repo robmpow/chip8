@@ -68,8 +68,6 @@ chip8_emulator::chip8_emulator(std::pair<int, int>& resolution, std::pair<SDL_Co
 
     frame_tex_bg_color =    mapColorFormat<SDL_PIXELFORMAT_RGBA8888>(palette.second);
 
-    chip8_logger.log<logger::log_info>("Frame Foreground color: 0x", std::hex, std::setw(8), std::setfill('0'), frame_tex_fg_color, "; Background color: ", std::hex, std::setw(8), std::setfill('0'), frame_tex_bg_color, "\n");
-
     frame_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 64, 32);
 
     int bpp;
@@ -82,9 +80,6 @@ chip8_emulator::chip8_emulator(std::pair<int, int>& resolution, std::pair<SDL_Co
 
     uint32_t pause_bmp_fg_color = SDL_MapRGBA(pause_surface->format, 0xFF, 0xFF, 0xFF, 0xFF);
     uint32_t pause_bmp_bg_color = SDL_MapRGBA(pause_surface->format, 0x00, 0x00, 0x00, 0xFF);
-
-    chip8_logger.log<logger::log_info>("Frame Foreground color: 0x", std::hex, std::setw(8), std::setfill('0'), pause_bmp_fg_color, "; Background color: ", std::hex, std::setw(8), std::setfill('0'), pause_bmp_bg_color, "\n");
-
 
     if(frame_tex_fg_color != pause_bmp_fg_color || frame_tex_bg_color != pause_bmp_bg_color){
         if(!SDL_LockSurface(pause_surface)){
@@ -172,15 +167,14 @@ void chip8_emulator::run(){
     while(running){
         beg = std::chrono::high_resolution_clock::now();
         if(running && chip8_running && !chip8_paused){
-            try{
-                tick_result res = chip8_instance.run_tick();
+            tick_result res = chip8_instance.run_tick();
+            if(res.error)
+                chip8_running = false;
+            else{
                 if(res.display_update){
                     render_frame();
                 }
                 update_sound_state(res.sound_state);
-            }catch(std::string error_msg){
-                std::cout << error_msg << std::endl;
-                chip8_running = NOT_RUNNING;
             }
         }
         else if(chip8_paused){

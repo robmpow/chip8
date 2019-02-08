@@ -5,13 +5,7 @@
 #ifndef CHIP8_UTIL_H
 #define CHIP8_UTIL_H
 
-#include <iostream>
-#include <string>
-#include <cstring>
-#include <cstdarg>
 #include <sys/stat.h>
-#include <chrono>
-#include <ctime>
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -23,10 +17,7 @@
 
 #define BIT_WIDTH(type) (8 * sizeof(type))
 
-extern const char* file_typenames[];
-
 extern const char* reg_file;
-
 const char* fileExists(char* file_path);
 
 #endif //CHIP8_UTIL_H

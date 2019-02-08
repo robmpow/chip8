@@ -39,10 +39,10 @@ clean:
 	@echo " Cleaning..."; 
 	@echo " $(RM) -r $(BUILDDIR) $(TARGETDIR)/$(TARGET) $(TARGETDIR)/$(TEST_TARGET)"; $(RM) -r $(BUILDDIR) $(TARGETDIR)/$(TARGET) $(TARGETDIR)/$(TEST_TARGET)
 
-test: CXX_FLAGS := $(CXX_FLAGS) -ggdb -DDEBUG
+test: CXX_FLAGS := $(CXX_FLAGS) -ggdb
 test: $(TARGETDIR)/$(TEST_TARGET)
 
-debug: CXX_FLAGS := $(CXX_FLAGS) -ggdb -DDEBUG
+debug: CXX_FLAGS := $(CXX_FLAGS) -ggdb
 debug: clean
 debug: $(TARGETDIR)/$(TARGET)
 

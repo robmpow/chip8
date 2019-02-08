@@ -5,7 +5,6 @@
 
 #include <iostream>
 #include <string>
-
 #include <cstdint>
 #include <getopt.h>
 #include <unordered_map>
@@ -15,6 +14,8 @@
 #include <unistd.h>
 #include <functional>
 #include <iomanip>
+#include <ctype.h>
+#include <algorithm>
 
 #include "chip8.h"
 #include "chip8_util.h"
@@ -24,16 +25,18 @@
 #include "logger_impl.hpp"
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
 
-static const option opts[] =   {{"res",     required_argument,  0,  'r'},
-                                {"log",     optional_argument,  0,  'l'},
-                                {"help",    no_argument,        0,  'h'},
-                                {0,         0,                  0,  0}};
+static const option long_opts[] =   {{"resolution",  required_argument,  0,  'r'},
+                                     {"log_enable",  optional_argument,  0,  0},
+                                     {"log_level",   required_argument,  0,  0},
+                                     {"log_file",    optional_argument,  0,  0},
+                                     {"help",        no_argument,        0,  'h'},
+                                     {0,             0,                  0,  0}};
 
-static const char usage[] = "usage: %s rom_file [-r | -res widthxheight] [-l | --log filepath] [-h | --help]\n"
+static const char usage[] = "rom_file [-r | -res widthxheight] [-h | --help] [--log_enable=true/false] [--log_level level] [--log_file file]\n"
                             "\t-r | --res wxh: sets the starting display resolution width to w and height to h.\n"
-                            "\t-l | --log filepath: enables logging, if filepath is provided the logfile is set to filepath.\n";
+                            "\t-l | --log severity_level: enables logging, if a severity_level is provided "
+                            "\t-f | --log_file filepath: enables logging, if filepath is provided the logfile is set to filepath.\n";
 
 namespace arg = std::placeholders;
 
@@ -45,15 +48,18 @@ int main(int argc, char** argv){
 
     union{
         bitfield<uint8_t, 0, 1> log;
+        bitfield<uint8_t, 1, 1> force_log;
+        bitfield<uint8_t, 2, 1> log_file;
         bitfield<uint8_t, 0, 8> all;
     } flags;
 
     flags.all = 0;
 
-    int opt;
+    int opt, longopt_ind = 0;
     std::string rom_path;
+    std::string log_file;
     opterr = 0;
-    while((opt = getopt_long(argc, argv, "r:h", opts, NULL)) != -1){
+    while((opt = getopt_long(argc, argv, "r:h", long_opts, &longopt_ind)) != -1){
         switch(opt){
             case 'r':
                 if(optarg){
@@ -63,29 +69,87 @@ int main(int argc, char** argv){
                         resolution.second = strtoul(split + 1, NULL, 10);
                     }
                     else{
-                        LOG_FATAL("Error: [-r | -res wxh ]: invalid screen resolution format.\n");
+                        LOG_FATAL("Error: [-r | -res wxh ]: invalid screen resolution format.", logger::endl);
                         exit(-1);
                     }
                     if(!resolution.first || !resolution.second){
-                        LOG_FATAL("Error: [-r | -res wxh ]: invalid screen resolution format.\n");
+                        LOG_FATAL("Error: [-r | -res wxh ]: invalid screen resolution format.", logger::endl);
                         exit(-1);
                     }
                 }
                 else{
-                    LOG_FATAL("Error: [-r | --res wxh]: missing screen resolution argument.\n");
+                    LOG_FATAL("Error: [-r | --res wxh]: missing screen resolution argument.", logger::endl);
                     exit(-1);
                 }
                 break;
             case 'h':
-                printf(usage, argv[0]);
+                std::cout << "usage: " << argv[0] << usage << std::endl;
                 exit(0);
+            case 0:
+                switch(longopt_ind){
+                    case 1:
+                        // log_enable
+                        if(optarg){
+                            std::string opt_string(optarg);
+                            std::transform(opt_string.begin(), opt_string.end(), opt_string.begin(), ::tolower);
+                            if(opt_string.compare("1")){
+                                flags.force_log = 1;
+                            }
+                            else if(opt_string.compare("0")){
+                                flags.force_log = 0;
+                            }
+                            else if(opt_string.compare("true")){
+                                flags.force_log = 1;
+                            }
+                            else if(opt_string.compare("false")){
+                                flags.force_log = 0;
+                            }
+                            else{
+                                LOG_FATAL("Error: Unknown argument '", optarg, "' for option '", optopt, "'", logger::endl);
+                                exit(-1);
+                            }
+                        }
+                        else{
+                            flags.log = 1;
+                        }
+                        break;
+                    case 2:
+                        // log_level
+                        if(optarg){
+                            int8_t level;
+                            if((level = logger::stringToLogLevel(std::string(optarg))) != -1){
+                                chip8_logger.set_log_level(static_cast<logger::log_level>(level));
+                            }
+                            else{
+                                LOG_FATAL("Error: [-log_level level]: unrecognized level argument, valid level arguments: {fatal, error, warning, debug, trace, info, all}", logger::endl);
+                                exit(-1);
+                            }
+                        }
+                        else{
+                            LOG_FATAL("Error: [-log_level level]: log_level requires level argument: {fatal, error, warning, debug, trace, info, all}.", logger::endl);
+                            exit(-1);
+                        }
+                        break;
+                    case 3:
+                        // log_file
+                        flags.log_file = 1;
+                        if(optarg){
+                            log_file = std::string(optarg);
+                        }
+                        break;
+                }
+                break;
             case 'l':
                 flags.log |= 1;
                 break;
+            case 'f':
+                flags.log |= 1;
+                flags.log_file = 1;
+
             case '?':
-                LOG_FATAL("Error: Unkownn option '", static_cast<char>(optopt), "'.\n");
-                printf(usage, argv[0]);
-                exit(1);
+                LOG_FATAL("Error: Unknown option '", static_cast<char>(optopt), "'.\n");
+                std::cout << "usage: " << argv[0] << usage << std::endl;
+                exit(-1);
             default:
                 break;
         }
@@ -109,8 +173,11 @@ int main(int argc, char** argv){
         exit(-1);
     }
 
-    if(flags.log){
-        chip8_logger.set_log_file("chip8" + rom_path);
+    if(flags.log_file && !log_file.empty()){
+        chip8_logger.set_log_file(log_file);
+    }
+    else if(flags.log_file){
+        chip8_logger.set_log_file_default();
     }
 
     try{
@@ -209,15 +276,8 @@ int main(int argc, char** argv){
         exit(-1);  
     }
 
-    std::cout << std::endl;
-
-    SDL_Log("Screen res set width: %d, height: %d.\n", resolution.first, resolution.second);
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) == -1){
         LOG_FATAL("SDL Error:", SDL_GetError(), logger::endl);
-    }
-
-    if(TTF_Init() == -1){
-        
     }
 
     chip8_logger.log<logger::log_trace>("Resolution: ", resolution.first, "x", resolution.second, logger::endl);
@@ -234,8 +294,6 @@ int main(int argc, char** argv){
     chip8_emulator emu(resolution, palette, rom_path, bind_map, true);
 
     emu.run();
-
-    TTF_Quit();
 
     SDL_Quit();
 

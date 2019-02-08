@@ -28,8 +28,7 @@ enum key_action{KEY_CH8_1 = 0,
                 KEY_CH8_B,
                 KEY_CH8_F,
                 KEY_EMU_PAUSE,
-                KEY_EMU_RESET,
-                };
+                KEY_EMU_RESET,};
 
 const std::array<std::string, KEY_EMU_RESET + 1> key_action_string({"KEY_CH8_1",
                                                                     "KEY_CH8_2",
