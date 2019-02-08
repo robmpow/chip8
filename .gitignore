@@ -31,9 +31,12 @@ sites
 *.out
 *.app
 
-
 #Directories
 bin/
 obj/
 .vscode/
 roms/
+log/*
+
+# Log Files
+*.log
