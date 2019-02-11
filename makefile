@@ -10,14 +10,14 @@ TEST_TARGET := chip8_test
 SRCEXT := cpp
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
-TEST_SOURCES := test/chip8_test.cpp src/chip8.cpp src/chip8_util.cpp
+TEST_SOURCES := test/chip8_test.cpp src/chip8.cpp src/chip8_util.cpp src/logger_impl.cpp src/logger.cpp
 TEST_OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(patsubst $(TESTDIR)/%,$(BUILDDIR)/%,$(TEST_SOURCES:.$(SRCEXT)=.o)))
 override CXX_FLAGS += -Wall -Werror -pedantic
 LIB := -lSDL2_ttf
 SDL_LIBS := $(shell sdl2-config --libs)
 TEST_LIBS := -lboost_unit_test_framework
 
-$(TARGETDIR)/$(TARGET): $(OBJECTS)
+$(TARGETDIR)/$(TARGET): $(OBJECTS) 
 	@echo " Linking..."
 	@mkdir -p $(TARGETDIR)
 	@echo " $(CXX) -std=$(CXX_VERSION) $^ -o $(TARGETDIR)/$(TARGET) $(SDL_LIBS) $(LIB)"; $(CXX) -std=$(CXX_VERSION) $^ -o $(TARGETDIR)/$(TARGET) $(SDL_LIBS) $(LIB)

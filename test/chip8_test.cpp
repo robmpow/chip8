@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE (chip8_test_init){
     SEED_RAND();
 
     for(uint i = 0; i < sizeof(test_load); i++){
-        test_load[i] = (char) (rand() % 0xFF);
+        test_load[i] = (char) (rand() % 0xff);
     }
 
     membuff test_prog_stream((char*) test_load, (char*) (test_load + sizeof(test_load)));
@@ -61,30 +61,30 @@ BOOST_AUTO_TEST_CASE (chip8_test_init){
 
 BOOST_AUTO_TEST_CASE (chip8_test_LD){
 
-    const uint8_t LD_V_test_prog[] = {    0x60, 0xF0, // [0x200] LD V0 = 0xF0
-                                                0x61, 0xF1, // [0x202] LD V1 = 0xF1
-                                                0x62, 0xF2, // [0x204] LD V1 = 0xF2
-                                                0x63, 0xF3, // [0x206] LD V1 = 0xF3
-                                                0x64, 0xF4, // [0x208] LD V1 = 0xF4
-                                                0x65, 0xF5, // [0x20A] LD V1 = 0xF5
-                                                0x66, 0xF6, // [0x20C] LD V1 = 0xF6
-                                                0x67, 0xF7, // [0x20E] LD V1 = 0xF7
-                                                0x68, 0xF8, // [0x210] LD V1 = 0xF8
-                                                0x69, 0xF9, // [0x212] LD V1 = 0xF9
-                                                0x6A, 0xFA, // [0x214] LD V1 = 0xFA
-                                                0x6B, 0xFB, // [0x216] LD V1 = 0xFB
-                                                0x6C, 0xFC, // [0x218] LD V1 = 0xFC
-                                                0x6D, 0xFD, // [0x220] LD V1 = 0xFD
-                                                0x6E, 0xFE, // [0x222] LD V1 = 0xFE
-                                                0x6F, 0xFF, // [0x224] LD V1 = 0xFF
+    const uint8_t LD_V_test_prog[] = {    0x60, 0xf0, // [0x200] LD V0 = 0xf0
+                                                0x61, 0xf1, // [0x202] LD V1 = 0xf1
+                                                0x62, 0xf2, // [0x204] LD V1 = 0xf2
+                                                0x63, 0xf3, // [0x206] LD V1 = 0xf3
+                                                0x64, 0xf4, // [0x208] LD V1 = 0xf4
+                                                0x65, 0xf5, // [0x20a] LD V1 = 0xf5
+                                                0x66, 0xf6, // [0x20c] LD V1 = 0xf6
+                                                0x67, 0xf7, // [0x20e] LD V1 = 0xf7
+                                                0x68, 0xf8, // [0x210] LD V1 = 0xf8
+                                                0x69, 0xf9, // [0x212] LD V1 = 0xf9
+                                                0x6a, 0xfa, // [0x214] LD V1 = 0xfa
+                                                0x6b, 0xfb, // [0x216] LD V1 = 0xfb
+                                                0x6c, 0xfc, // [0x218] LD V1 = 0xfc
+                                                0x6d, 0xfd, // [0x220] LD V1 = 0xfd
+                                                0x6e, 0xfe, // [0x222] LD V1 = 0xfe
+                                                0x6f, 0xff, // [0x224] LD V1 = 0xff
                                                 0x80, 0x80, // [0x226] LD V0 = V8
                                                 0x81, 0x90, // [0x228] LD V1 = V9
-                                                0x82, 0xA0, // [0x22A] LD V2 = VA
-                                                0x83, 0xB0, // [0x22C] LD V3 = VB
-                                                0x84, 0xC0, // [0x22E] LD V4 = VC
-                                                0x85, 0xD0, // [0x230] LD V5 = VD
-                                                0x86, 0xE0, // [0x232] LD V6 = VE
-                                                0x87, 0xF0, // [0x234] LD V7 = VF
+                                                0x82, 0xa0, // [0x22a] LD V2 = VA
+                                                0x83, 0xb0, // [0x22c] LD V3 = VB
+                                                0x84, 0xc0, // [0x22e] LD V4 = VC
+                                                0x85, 0xd0, // [0x230] LD V5 = VD
+                                                0x86, 0xe0, // [0x232] LD V6 = VE
+                                                0x87, 0xf0, // [0x234] LD V7 = VF
                                                 0x00,}; 
 
     membuff test_prog_stream((char*) LD_V_test_prog, (char*) (LD_V_test_prog + sizeof(LD_V_test_prog)));
@@ -94,45 +94,45 @@ BOOST_AUTO_TEST_CASE (chip8_test_LD){
 
     for(int count = 0; count < 0x10; count++){
         RUN_TICK();
-        TEST_ASSERT(ch8.v_regs[count] == count + 0xF0, "Load test fail for register V(0x" << count << "); Expected: <0X" << AS_HEX(2, count + 0xF0) << ">; Actual: <0x" << AS_HEX(2, ch8.v_regs[count]) << ">");
+        TEST_ASSERT(ch8.v_regs[count] == count + 0xf0, "Load test fail for register V(0x" << count << "); Expected: <0x" << AS_HEX(2, count + 0xf0) << ">; Actual: <0x" << AS_HEX(2, ch8.v_regs[count]) << ">");
     }
 
     for(int count = 0; count < 0x08; count++){
         RUN_TICK();
-        TEST_ASSERT(ch8.v_regs[count] == ch8.v_regs[count + 8], "Load test fail for register V(0x" << count << "); Expected: <0X" << AS_HEX(2, ch8.v_regs[count + 8]) << ">; Actual: <0x" << AS_HEX(2, ch8.v_regs[count]) << ">");
+        TEST_ASSERT(ch8.v_regs[count] == ch8.v_regs[count + 8], "Load test fail for register V(0x" << count << "); Expected: <0x" << AS_HEX(2, ch8.v_regs[count + 8]) << ">; Actual: <0x" << AS_HEX(2, ch8.v_regs[count]) << ">");
     }
 
 }
 
-BOOST_AUTO_TEST_CASE(chip8_test_dt_st){
+BOOST_AUTO_TEST_CASE(chip8_test_DT_ST){
 
     uint8_t DT_ST_test_prog[] = {   0x60, 0x00, // [0x200] LD V(rand_reg0) = rand_imm0
                                     0x60, 0x00, // [0x202] LD V(rand_reg1) = rand_imm1
-                                    0xF0, 0x15, // [0x204] LD DT = V(rand_reg0)
-                                    0xF0, 0x18, // [0x206] LD ST = V(rand_reg1)
-                                    0xF0, 0x07, // [0x208] LD V(rand_reg1) = DT
-                                    0x30, 0x00, // [0x20A] SE V(rand_reg1) == 0x00
-                                    0x12, 0x08, // [0x20C] JMP 0x208
-                                    0x00, 0x00, // [0x20E] NOP
+                                    0xf0, 0x15, // [0x204] LD DT = V(rand_reg0)
+                                    0xf0, 0x18, // [0x206] LD ST = V(rand_reg1)
+                                    0xf0, 0x07, // [0x208] LD V(rand_reg1) = DT
+                                    0x30, 0x00, // [0x20a] SE V(rand_reg1) == 0x00
+                                    0x12, 0x08, // [0x20c] JMP 0x208
+                                    0x00, 0x00, // [0x20e] NOP
     };
 
     SEED_RAND();
 
     uint8_t rand_reg0, rand_reg1, rand_imm0, rand_imm1;
     for(int i = 0; i< NUM_FUZZ_TESTS; i++){
-        rand_reg0 = rand() % 0xF;
-        while((rand_reg1 = rand() % 0xF) == rand_reg0);
-        rand_imm1 = rand() & 0xFF;
-        while((rand_imm0 = rand() & 0xFF) < rand_imm1);
+        rand_reg0 = rand() % 0xf;
+        while((rand_reg1 = rand() % 0xf) == rand_reg0);
+        rand_imm1 = rand() & 0xff;
+        while((rand_imm0 = rand() & 0xff) < rand_imm1);
 
         DT_ST_test_prog[0x00] = 0x60 | rand_reg0;   // [0x200] LD V(rand_reg0) = rand_imm0
         DT_ST_test_prog[0x01] = rand_imm0;          // [0x201] LD V(rand_reg0) = rand_imm0
         DT_ST_test_prog[0x02] = 0x60 | rand_reg1;   // [0x202] LD V(rand_reg1) = rand_imm1
         DT_ST_test_prog[0x03] = rand_imm1;          // [0x203] LD V(rand_reg1) = rand_imm1
-        DT_ST_test_prog[0x04] = 0xF0 | rand_reg0;   // [0x204] LD DT = V(rand_reg0)
-        DT_ST_test_prog[0x06] = 0xF0 | rand_reg1;   // [0x206] LD ST = V(rand_reg1)
-        DT_ST_test_prog[0x08] = 0xF0 | rand_reg0;   // [0x208] LD V(rand_reg0) = DT
-        DT_ST_test_prog[0x0A] = 0x30 | rand_reg1;   // [0x20A] SE V(rand_reg0) == 0x00
+        DT_ST_test_prog[0x04] = 0xf0 | rand_reg0;   // [0x204] LD DT = V(rand_reg0)
+        DT_ST_test_prog[0x06] = 0xf0 | rand_reg1;   // [0x206] LD ST = V(rand_reg1)
+        DT_ST_test_prog[0x08] = 0xf0 | rand_reg0;   // [0x208] LD V(rand_reg0) = DT
+        DT_ST_test_prog[0x0a] = 0x30 | rand_reg0;   // [0x20a] SE V(rand_reg0) == 0x00
 
         membuff test_prog_stream((char*) DT_ST_test_prog, (char*) (DT_ST_test_prog + sizeof(DT_ST_test_prog)));
         std::istream test_prog_istream(&test_prog_stream);
@@ -156,54 +156,56 @@ BOOST_AUTO_TEST_CASE(chip8_test_dt_st){
         while(ticks < 10 * rand_imm0){
             // LD v(rand_reg0) = DT
             RUN_TICK();
-            TEST_ASSERT(ch8.v_regs[rand_reg0] == ch8.dt_reg, "Load test case failed for V(0x" << AS_HEX(1, rand_reg0) << ") = DT<0x" << AS_HEX(2, ch8.dt_reg) << ">; Expected V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, ch8.dt_reg) << ">; Actual V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, ch8.v_regs[rand_reg0]) << ">");
+            TEST_ASSERT(ch8.v_regs[rand_reg0] == ch8.dt_reg, "Load test case failed " << static_cast<uint>(rand_reg0) << "; " << static_cast<uint>(rand_reg1) << "; " << static_cast<uint>(rand_imm0) << "; " << static_cast<uint>(rand_imm1) << " V(0x" << AS_HEX(1, rand_reg0) << ") = DT<0x" << AS_HEX(2, ch8.dt_reg) << ">; Expected V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, ch8.dt_reg) << ">; Actual V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, ch8.v_regs[rand_reg0]) << ">");
             
             RUN_TICK();
-            RUN_TICK();
+            ticks += 2;
+            if(ticks < 10 * rand_imm0){
+                RUN_TICK();
+                ticks++;
 
-            ticks+=3;
-
-            TEST_ASSERT(ch8.dt_reg == ((rand_imm0 - ticks / 10 > 0)? rand_imm0 - ticks / 10 : 0), "DT counter test case failed; Expected DT<0x" << AS_HEX(2, ((rand_imm0 - ticks / 10) > 0)? rand_imm0 - ticks / 10 : 0) << ">; Actual DT<0x" << AS_HEX(2, ch8.dt_reg) << ">");
+                TEST_ASSERT(ch8.dt_reg == ((rand_imm0 - ticks / 10 > 0)? rand_imm0 - ticks / 10 : 0), "DT counter test case failed; Expected DT<0x" << AS_HEX(2, ((rand_imm0 - ticks / 10) > 0)? rand_imm0 - ticks / 10 : 0) << ">; Actual DT<0x" << AS_HEX(2, ch8.dt_reg) << ">");
+            }
         }
     }
 }
 
-BOOST_AUTO_TEST_CASE (chip8_test_LD_i){
+BOOST_AUTO_TEST_CASE (chip8_test_LD_I){
     const uint8_t LD_i_test_prog[] = {    0x60, 0x00, // [0x200] LD V0 = 0x00
-                                                0xF0, 0x29, // [0x202] LD I = Addr of sprite of the value of V0
+                                                0xf0, 0x29, // [0x202] LD I = Addr of sprite of the value of V0
                                                 0x61, 0x01, // [0x204] LD V1 = 0x01
-                                                0xF1, 0x29, // [0x206] LD I = Addr of sprite of the value of V1
+                                                0xf1, 0x29, // [0x206] LD I = Addr of sprite of the value of V1
                                                 0x62, 0x02, // [0x208] LD V2 = 0x02
-                                                0xF2, 0x29, // [0x20A] LD I = Addr of sprite of the value of V2
-                                                0x63, 0x03, // [0x20C] LD V3 = 0x03
-                                                0xF3, 0x29, // [0x20E] LD I = Addr of sprite of the value of V3
+                                                0xf2, 0x29, // [0x20a] LD I = Addr of sprite of the value of V2
+                                                0x63, 0x03, // [0x20c] LD V3 = 0x03
+                                                0xf3, 0x29, // [0x20e] LD I = Addr of sprite of the value of V3
                                                 0x64, 0x04, // [0x210] LD V4 = 0x04
-                                                0xF4, 0x29, // [0x212] LD I = Addr of sprite of the value of V4
+                                                0xf4, 0x29, // [0x212] LD I = Addr of sprite of the value of V4
                                                 0x65, 0x05, // [0x214] LD V5 = 0x05
-                                                0xF5, 0x29, // [0x216] LD I = Addr of sprite of the value of V5
+                                                0xf5, 0x29, // [0x216] LD I = Addr of sprite of the value of V5
                                                 0x66, 0x06, // [0x218] LD V6 = 0x06
-                                                0xF6, 0x29, // [0x21A] LD I = Addr of sprite of the value of V6
-                                                0x67, 0x07, // [0x21B] LD V7 = 0x07
-                                                0xF7, 0x29, // [0x21E] LD I = Addr of sprite of the value of V7
+                                                0xf6, 0x29, // [0x21a] LD I = Addr of sprite of the value of V6
+                                                0x67, 0x07, // [0x21b] LD V7 = 0x07
+                                                0xf7, 0x29, // [0x21e] LD I = Addr of sprite of the value of V7
                                                 0x68, 0x08, // [0x220] LD V8 = 0x08
-                                                0xF8, 0x29, // [0x222] LD I = Addr of sprite of the value of V8
+                                                0xf8, 0x29, // [0x222] LD I = Addr of sprite of the value of V8
                                                 0x69, 0x09, // [0x224] LD V9 = 0x09
-                                                0xF9, 0x29, // [0x226] LD I = Addr of sprite of the value of V9
-                                                0x6A, 0x0A, // [0x228] LD VA = 0x0A
-                                                0xFA, 0x29, // [0x22A] LD I = Addr of sprite of the value of VA
-                                                0x6B, 0x0B, // [0x22C] LD VB = 0x0B
-                                                0xFB, 0x29, // [0x22E] LD I = Addr of sprite of the value of VB
-                                                0x6C, 0x0C, // [0x230] LD VC = 0x0C
-                                                0xFC, 0x29, // [0x232] LD I = Addr of sprite of the value of VC
-                                                0x6D, 0x0D, // [0x234] LD VD = 0x0D
-                                                0xFD, 0x29, // [0x236] LD I = Addr of sprite of the value of VD
-                                                0x6E, 0x0E, // [0x238] LD VE = 0x0E
-                                                0xFE, 0x29, // [0x23A] LD I = Addr of sprite of the value of VE
-                                                0x6F, 0x0F, // [0x23B] LD VF = 0x0F
-                                                0xFF, 0x29, // [0x23C] LD I = Addr of sprite of the value of VF
-                                                0xAF, 0xF0, // [0x23E] LD I = 0xFF0
-                                                0x60, 0x9D, // [0x240] LD V0 = 0x9D (157)
-                                                0xF0, 0x33, // [0x242] LD BCD representation of V0 into memory[I], memory[I+1], memory[I+2]
+                                                0xf9, 0x29, // [0x226] LD I = Addr of sprite of the value of V9
+                                                0x6a, 0x0a, // [0x228] LD VA = 0x0a
+                                                0xfa, 0x29, // [0x22a] LD I = Addr of sprite of the value of VA
+                                                0x6b, 0x0b, // [0x22c] LD VB = 0x0b
+                                                0xfb, 0x29, // [0x22e] LD I = Addr of sprite of the value of VB
+                                                0x6c, 0x0c, // [0x230] LD VC = 0x0c
+                                                0xfc, 0x29, // [0x232] LD I = Addr of sprite of the value of VC
+                                                0x6d, 0x0d, // [0x234] LD VD = 0x0d
+                                                0xfd, 0x29, // [0x236] LD I = Addr of sprite of the value of VD
+                                                0x6e, 0x0e, // [0x238] LD VE = 0x0e
+                                                0xfe, 0x29, // [0x23a] LD I = Addr of sprite of the value of VE
+                                                0x6f, 0x0f, // [0x23b] LD VF = 0x0f
+                                                0xff, 0x29, // [0x23c] LD I = Addr of sprite of the value of VF
+                                                0xaf, 0xf0, // [0x23e] LD I = 0xff0
+                                                0x60, 0x9d, // [0x240] LD V0 = 0x9d (157)
+                                                0xf0, 0x33, // [0x242] LD BCD representation of V0 into memory[I], memory[I+1], memory[I+2]
     };
                                     
     membuff test_prog_stream((char*) LD_i_test_prog, (char*) (LD_i_test_prog + sizeof(LD_i_test_prog)));
@@ -220,13 +222,13 @@ BOOST_AUTO_TEST_CASE (chip8_test_LD_i){
 
     // LD addr into I
     RUN_TICK();
-    TEST_ASSERT(ch8.i_reg == 0xFF0, "Load test case failed for register I; Expected: <0x" << AS_HEX(4, 0xFF0) << ">; Actual: <0x" << AS_HEX(4, ch8.i_reg) << ">");
+    TEST_ASSERT(ch8.i_reg == 0xff0, "Load test case failed for register I; Expected: <0x" << AS_HEX(4, 0xff0) << ">; Actual: <0x" << AS_HEX(4, ch8.i_reg) << ">");
 
     // LD BCD repr of V0 into memory[I, I+1, I+2]
     RUN_TICK();
     RUN_TICK();
     const char expected_bcd[] = {1, 5, 7};
-    TEST_ASSERT(memcmp(expected_bcd, ch8.memory + 0x0FF0, 3) == 0, "Load teast failed for BCD repr load of V(0) = <0x9D> (157); Expected: {1, 5, 7}; Actual: {" << uint(ch8.memory[ch8.i_reg]) << ", " << uint(ch8.memory[ch8.i_reg + 1]) << ", " << uint(ch8.memory[ch8.i_reg + 2]) << "}");
+    TEST_ASSERT(memcmp(expected_bcd, ch8.memory + 0x0ff0, 3) == 0, "Load teast failed for BCD repr load of V(0) = <0x9d> (157); Expected: {1, 5, 7}; Actual: {" << uint(ch8.memory[ch8.i_reg]) << ", " << uint(ch8.memory[ch8.i_reg + 1]) << ", " << uint(ch8.memory[ch8.i_reg + 2]) << "}");
 }
 
 BOOST_AUTO_TEST_CASE (chip8_test_ADD){
@@ -237,10 +239,10 @@ BOOST_AUTO_TEST_CASE (chip8_test_ADD){
 
     uint8_t rand_reg0, rand_reg1, rand_imm0, rand_imm1;
     for(int i = 0; i< NUM_FUZZ_TESTS; i++){
-        rand_reg0 = rand() % 0xF;
-        while((rand_reg1 = rand() % 0xF) == rand_reg0);
-        rand_imm0 = rand() % 0x7F;
-        rand_imm1 = 0x80 + rand() % 0x7F;
+        rand_reg0 = rand() % 0xf;
+        while((rand_reg1 = rand() % 0xf) == rand_reg0);
+        rand_imm0 = rand() % 0x7f;
+        rand_imm1 = 0x80 + rand() % 0x7f;
 
         ADD_test_prog[0] = 0x60 | rand_reg0;        // [0x200] LD V(rand_reg0) = rand_imm0
         ADD_test_prog[1] = rand_imm0;               // [0x201] LD V(rand_reg0) = rand_imm0
@@ -252,8 +254,8 @@ BOOST_AUTO_TEST_CASE (chip8_test_ADD){
         ADD_test_prog[7] = (rand_reg1 << 4) | 0x04; // [0x207] ADD V(rand_reg1) += V(rand_reg1) **OVERFLOW**
         ADD_test_prog[8] = 0x60 | rand_reg0;        // [0x208] LD V(rand_reg1) = rand_imm1
         ADD_test_prog[9] = rand_imm0;               // [0x209] LD V(rand_reg1) = rand_imm1
-        ADD_test_prog[10] = 0x80 | rand_reg0;       // [0x20A] ADD V(rand_reg0) += V(rand_reg0) **NO OVERFLOW**
-        ADD_test_prog[11] = (rand_reg0 << 4) | 0x04;// [0x20B] ADD V(rand_reg0) += V(rand_reg0) **NO OVERFLOW**
+        ADD_test_prog[10] = 0x80 | rand_reg0;       // [0x20a] ADD V(rand_reg0) += V(rand_reg0) **NO OVERFLOW**
+        ADD_test_prog[11] = (rand_reg0 << 4) | 0x04;// [0x20b] ADD V(rand_reg0) += V(rand_reg0) **NO OVERFLOW**
 
         membuff test_prog_stream((char*) ADD_test_prog, (char*) (ADD_test_prog + sizeof(ADD_test_prog)));
         std::istream test_prog_istream(&test_prog_stream);
@@ -263,17 +265,17 @@ BOOST_AUTO_TEST_CASE (chip8_test_ADD){
         RUN_TICK();
         RUN_TICK();
 
-        TEST_ASSERT(ch8.v_regs[rand_reg0] == ((rand_imm0 + rand_imm0) & 0xFF), "ADD imm test case failed, incorrect add result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> + <0x" << AS_HEX(2, rand_imm0) << ">; Expected: V(0x" << AS_HEX(1, rand_reg0)<< ")<0x" << AS_HEX(2, (rand_imm0 + rand_imm0) & 0xFF) << ">; Actual V(0x" << AS_HEX(1, rand_reg0)<< ")<0x" << AS_HEX(2, ch8.V(rand_reg0)) << ">");
+        TEST_ASSERT(ch8.v_regs[rand_reg0] == ((rand_imm0 + rand_imm0) & 0xff), "ADD imm test case failed, incorrect add result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> + <0x" << AS_HEX(2, rand_imm0) << ">; Expected: V(0x" << AS_HEX(1, rand_reg0)<< ")<0x" << AS_HEX(2, (rand_imm0 + rand_imm0) & 0xff) << ">; Actual V(0x" << AS_HEX(1, rand_reg0)<< ")<0x" << AS_HEX(2, ch8.V(rand_reg0)) << ">");
 
         RUN_TICK();
         RUN_TICK();
-        TEST_ASSERT(ch8.v_regs[rand_reg1] == ((rand_imm1 + rand_imm1) & 0xFF), "ADD reg test case failed, incorrect add result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> + <0x" << AS_HEX(2, rand_imm1) << ">; Expected: V(0x" << AS_HEX(1, rand_reg1)<< ")<0x" << AS_HEX(2, (rand_imm1 + rand_imm1) & 0xFF) << ">; Actual V(0x" << AS_HEX(1, rand_reg1)<< ")<0x" << AS_HEX(2, ch8.V(rand_reg1)) << ">");
-        TEST_ASSERT(ch8.v_regs[0xF] == 0x01, "ADD reg test case failed, incorrect carry flag result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> + <0x" << AS_HEX(2, rand_imm1) << ">; Expected: V(F)<0x01>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xF)) << ">");
+        TEST_ASSERT(ch8.v_regs[rand_reg1] == ((rand_imm1 + rand_imm1) & 0xff), "ADD reg test case failed, incorrect add result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> + <0x" << AS_HEX(2, rand_imm1) << ">; Expected: V(0x" << AS_HEX(1, rand_reg1)<< ")<0x" << AS_HEX(2, (rand_imm1 + rand_imm1) & 0xff) << ">; Actual V(0x" << AS_HEX(1, rand_reg1)<< ")<0x" << AS_HEX(2, ch8.V(rand_reg1)) << ">");
+        TEST_ASSERT(ch8.v_regs[0xf] == 0x01, "ADD reg test case failed, incorrect carry flag result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> + <0x" << AS_HEX(2, rand_imm1) << ">; Expected: V(F)<0x01>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xf)) << ">");
 
         RUN_TICK();
         RUN_TICK();
-        TEST_ASSERT(ch8.v_regs[rand_reg0] == ((rand_imm0 + rand_imm0) & 0xFF), "ADD reg test case failed, incorrect add result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> + <0x" << AS_HEX(2, rand_imm0) << ">; Expected: <0x" << AS_HEX(2, (rand_imm0 + rand_imm0) & 0xFF) << ">; Actual <0x" << AS_HEX(2, ch8.V(rand_reg0)) << ">");
-        TEST_ASSERT(ch8.v_regs[0xF] == 0x00, "ADD reg test case failed, incorrect carry flag result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> + <0x" << AS_HEX(2, rand_imm0) << ">; Expected: V(F)<0x00>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xF)) << ">");
+        TEST_ASSERT(ch8.v_regs[rand_reg0] == ((rand_imm0 + rand_imm0) & 0xff), "ADD reg test case failed, incorrect add result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> + <0x" << AS_HEX(2, rand_imm0) << ">; Expected: <0x" << AS_HEX(2, (rand_imm0 + rand_imm0) & 0xff) << ">; Actual <0x" << AS_HEX(2, ch8.V(rand_reg0)) << ">");
+        TEST_ASSERT(ch8.v_regs[0xf] == 0x00, "ADD reg test case failed, incorrect carry flag result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> + <0x" << AS_HEX(2, rand_imm0) << ">; Expected: V(F)<0x00>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xf)) << ">");
 
     }
 }
@@ -286,10 +288,10 @@ BOOST_AUTO_TEST_CASE (chip8_test_SUB){
 
     uint8_t rand_reg0, rand_reg1, rand_imm0, rand_imm1;
     for(int i = 0; i< NUM_FUZZ_TESTS; i++){
-        rand_reg0 = rand() % 0xF;
-        while((rand_reg1 = rand() % 0xF) == rand_reg0);
-        rand_imm0 = rand() % 0x7F;
-        rand_imm1 = 0x80 + rand() % 0x7F;
+        rand_reg0 = rand() % 0xf;
+        while((rand_reg1 = rand() % 0xf) == rand_reg0);
+        rand_imm0 = rand() % 0x7f;
+        rand_imm1 = 0x80 + rand() % 0x7f;
 
         SUB_test_prog[0x00] = 0x60 | rand_reg0;       // [0x200] LD V(rand_reg0) = rand_imm0
         SUB_test_prog[0x01] = rand_imm0;              // [0x201] LD V(rand_reg0) = rand_imm0
@@ -301,12 +303,12 @@ BOOST_AUTO_TEST_CASE (chip8_test_SUB){
         SUB_test_prog[0x07] = rand_imm1;              // [0x207] LD V(rand_reg1) = rand_imm1
         SUB_test_prog[0x08] = 0x80 | rand_reg0;       // [0x208] SUB V(rand_reg0) = V(rand_reg0) - V(rand_reg1) **BORROW**
         SUB_test_prog[0x09] = (rand_reg1 << 4) | 0x5; // [0x209] SUB V(rand_reg0) = V(rand_reg0) - V(rand_reg1) **BORROW**
-        SUB_test_prog[0x0A] = 0x60 | rand_reg0;       // [0x20A] LD V(rand_reg0) = rand_imm0
-        SUB_test_prog[0x0B] = rand_imm0;              // [0x20B] LD V(rand_reg0) = rand_imm0
-        SUB_test_prog[0x0C] = 0x80 | rand_reg1;       // [0x20C] SUBN V(rand_reg1) = V(rand_reg0) - V(rand_reg1) **BORROW**
-        SUB_test_prog[0x0D] = (rand_reg0 << 4) | 0x7; // [0x20D] SUBN V(rand_reg1) = V(rand_reg0) - V(rand_reg1) **BORROW**
-        SUB_test_prog[0x0E] = 0x60 | rand_reg1;       // [0x20E] LD V(rand_reg1) = rand_imm1
-        SUB_test_prog[0x0F] = rand_imm1;              // [0x20F] LD V(rand_reg1) = rand_imm1
+        SUB_test_prog[0x0a] = 0x60 | rand_reg0;       // [0x20a] LD V(rand_reg0) = rand_imm0
+        SUB_test_prog[0x0b] = rand_imm0;              // [0x20b] LD V(rand_reg0) = rand_imm0
+        SUB_test_prog[0x0c] = 0x80 | rand_reg1;       // [0x20c] SUBN V(rand_reg1) = V(rand_reg0) - V(rand_reg1) **BORROW**
+        SUB_test_prog[0x0d] = (rand_reg0 << 4) | 0x7; // [0x20d] SUBN V(rand_reg1) = V(rand_reg0) - V(rand_reg1) **BORROW**
+        SUB_test_prog[0x0e] = 0x60 | rand_reg1;       // [0x20e] LD V(rand_reg1) = rand_imm1
+        SUB_test_prog[0x0f] = rand_imm1;              // [0x20f] LD V(rand_reg1) = rand_imm1
         SUB_test_prog[0x10] = 0x80 | rand_reg0;       // [0x210] SUBN V(rand_reg0) = V(rand_reg1) - V(rand_reg0) **NO BORROW**
         SUB_test_prog[0x11] = (rand_reg1 << 4) | 0x7; // [0x211] SUBN V(rand_reg0) = V(rand_reg1) - V(rand_reg0) **NO BORROW**
 
@@ -319,24 +321,24 @@ BOOST_AUTO_TEST_CASE (chip8_test_SUB){
         RUN_TICK();
         RUN_TICK();
         RUN_TICK();
-        TEST_ASSERT(ch8.v_regs[rand_reg1] == ((rand_imm1 - rand_imm0) & 0xFF), "SUB test case failed, incorrect SUB result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> - V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << ">; Expected: V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, (rand_imm1 - rand_imm0) & 0xFF) << ">; Actual V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, ch8.V(rand_reg1)) << ">");
-        TEST_ASSERT(ch8.v_regs[0xF] == 0x01, "SUB test case failed, incorrect borrow flag result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> - V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << ">; Expected: V(F)<0x01>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xF)) << ">");
+        TEST_ASSERT(ch8.v_regs[rand_reg1] == ((rand_imm1 - rand_imm0) & 0xff), "SUB test case failed, incorrect SUB result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> - V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << ">; Expected: V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, (rand_imm1 - rand_imm0) & 0xff) << ">; Actual V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, ch8.V(rand_reg1)) << ">");
+        TEST_ASSERT(ch8.v_regs[0xf] == 0x01, "SUB test case failed, incorrect borrow flag result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> - V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << ">; Expected: V(F)<0x01>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xf)) << ">");
 
         RUN_TICK();
         RUN_TICK();
-        TEST_ASSERT(ch8.v_regs[rand_reg0] == ((rand_imm0 - rand_imm1) & 0xFF), "SUB test case failed, incorrect SUB result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> - V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << ">; Expected: V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, (rand_imm0 - rand_imm1) & 0xFF) << ">; Actual V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, ch8.V(rand_reg0)) << ">");
-        TEST_ASSERT(ch8.v_regs[0xF] == 0x00, "SUB test case failed, incorrect borrow flag result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> - V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << ">; Expected: V(F)<0x00>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xF)) << ">");
+        TEST_ASSERT(ch8.v_regs[rand_reg0] == ((rand_imm0 - rand_imm1) & 0xff), "SUB test case failed, incorrect SUB result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> - V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << ">; Expected: V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, (rand_imm0 - rand_imm1) & 0xff) << ">; Actual V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, ch8.V(rand_reg0)) << ">");
+        TEST_ASSERT(ch8.v_regs[0xf] == 0x00, "SUB test case failed, incorrect borrow flag result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> - V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << ">; Expected: V(F)<0x00>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xf)) << ">");
 
 
         RUN_TICK();
         RUN_TICK();
-        TEST_ASSERT(ch8.v_regs[rand_reg1] == ((rand_imm0 - rand_imm1) & 0xFF), "SUB test case failed, incorrect SUBN result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> - V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << ">; Expected: V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, (rand_imm0 - rand_imm1) & 0xFF) << ">; Actual V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, ch8.V(rand_reg1)) << ">");
-        TEST_ASSERT(ch8.v_regs[0xF] == 0x00, "SUBN test case failed, incorrect borrow flag result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> - V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << ">; Expected: V(F)<0x00>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xF)) << ">");
+        TEST_ASSERT(ch8.v_regs[rand_reg1] == ((rand_imm0 - rand_imm1) & 0xff), "SUB test case failed, incorrect SUBN result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> - V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << ">; Expected: V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, (rand_imm0 - rand_imm1) & 0xff) << ">; Actual V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, ch8.V(rand_reg1)) << ">");
+        TEST_ASSERT(ch8.v_regs[0xf] == 0x00, "SUBN test case failed, incorrect borrow flag result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> - V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << ">; Expected: V(F)<0x00>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xf)) << ">");
 
         RUN_TICK();
         RUN_TICK();
-        TEST_ASSERT(ch8.v_regs[rand_reg0] == ((rand_imm1 - rand_imm0) & 0xFF), "SUB test case failed, incorrect SUBN result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> - V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << ">; Expected: V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, (rand_imm1 - rand_imm0) & 0xFF) << ">; Actual V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, ch8.V(rand_reg0)) << ">");
-        TEST_ASSERT(ch8.v_regs[0xF] == 0x01, "SUB test case failed, incorrect borrow flag result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> - V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << ">; Expected: V(F)<0x01>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xF)) << ">");
+        TEST_ASSERT(ch8.v_regs[rand_reg0] == ((rand_imm1 - rand_imm0) & 0xff), "SUB test case failed, incorrect SUBN result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> - V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << ">; Expected: V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, (rand_imm1 - rand_imm0) & 0xff) << ">; Actual V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, ch8.V(rand_reg0)) << ">");
+        TEST_ASSERT(ch8.v_regs[0xf] == 0x01, "SUB test case failed, incorrect borrow flag result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> - V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << ">; Expected: V(F)<0x01>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xf)) << ">");
 
     }
 
@@ -344,25 +346,30 @@ BOOST_AUTO_TEST_CASE (chip8_test_SUB){
 
 BOOST_AUTO_TEST_CASE(chip8_test_JMP){
 
-    uint8_t JMP_test_prog[] = { 0x12, 0x06, // [0x200] JMP 0x206
-                                0x00, 0x00, // [0x202] NOP
+    // test succeeds if no nop errors occur
+    uint8_t JMP_test_prog[] = { 0x22, 0x2c, // [0x200] CALL 0x22c
+                                0x12, 0x08, // [0x202] JMP 0x208
                                 0x00, 0x00, // [0x204] NOP
-                                0x60, 0x00, // [0x206] LD V(rand_reg0) = rand_imm0
-                                0x60, 0x00, // [0x208] LD V(rand_reg1) = rand_imm1
-                                0x60, 0x00, // [0x20A] LD V(rand_reg2) = rand_imm0
-                                0x30, 0x00, // [0x20C] SE V(rand_reg2) == rand_imm1     **NO SKIP**
-                                0x30, 0x00, // [0x20E] SE V(rand_reg0) == rand_imm0     **SKIP**
-                                0x00, 0x00, // [0x210] NOP
-                                0x40, 0x00, // [0x212] SNE V(rand_reg0) != rand_imm0     **NO SKIP**
-                                0x40, 0x00, // [0x214] SNE V(rand_reg1) != rand_imm0    **SKIP**
-                                0x00, 0x00, // [0x216] NOP
-                                0x90, 0x00, // [0x218] SNE V(rand_reg0) != V(rand_reg2)   **NO SKIP**
-                                0x90, 0x00, // [0x21A] SNE V(rand_reg2) != V(rand_reg1) ** SKIP**
-                                0x00, 0x00, // [0x21C] NOP
-                                0x50, 0x00, // [0x21E] SE V(rand_reg0) == V(rand_reg1)  **NO SKIP**
-                                0x50, 0x00, // [0x220] SE V(rand_reg2) == V(rand_reg0)  **SKIP** 
-                                0x00, 0x00, // [0x222] NOP
-                                0x60, 0x00, // [0x224] LD V(0) = 0 
+                                0x00, 0x00, // [0x206] NOP
+                                0x60, 0x00, // [0x208] LD V(rand_reg0) = rand_imm0
+                                0x60, 0x00, // [0x20a] LD V(rand_reg1) = rand_imm1
+                                0x60, 0x00, // [0x20c] LD V(rand_reg2) = rand_imm0
+                                0x30, 0x00, // [0x20e] SE V(rand_reg2) == rand_imm1     **NO SKIP**
+                                0x30, 0x00, // [0x210] SE V(rand_reg0) == rand_imm0     **SKIP**
+                                0x00, 0x00, // [0x212] NOP
+                                0x40, 0x00, // [0x214] SNE V(rand_reg0) != rand_imm0     **NO SKIP**
+                                0x40, 0x00, // [0x216] SNE V(rand_reg1) != rand_imm0    **SKIP**
+                                0x00, 0x00, // [0x218] NOP
+                                0x90, 0x00, // [0x21a] SNE V(rand_reg0) != V(rand_reg2)   **NO SKIP**
+                                0x90, 0x00, // [0x21c] SNE V(rand_reg2) != V(rand_reg1) ** SKIP**
+                                0x00, 0x00, // [0x21e] NOP
+                                0x50, 0x00, // [0x220] SE V(rand_reg0) == V(rand_reg1)  **NO SKIP**
+                                0x50, 0x00, // [0x222] SE V(rand_reg2) == V(rand_reg0)  **SKIP** 
+                                0x00, 0x00, // [0x224] NOP
+                                0x60, 0x00, // [0x226] LD V(0) = 0 
+                                0x00, 0x00, // [0x228] NOP
+                                0x00, 0x00, // [0x22a] NOP
+                                0x00, 0xee, // [0x22c] RET
     };
 
     SEED_RAND();
@@ -370,11 +377,11 @@ BOOST_AUTO_TEST_CASE(chip8_test_JMP){
     uint8_t rand_reg0, rand_reg1, rand_reg2, rand_imm0, rand_imm1;
     for(int i=0; i<NUM_FUZZ_TESTS; i++){
 
-        rand_reg0 = rand() % 0xE;
-        while((rand_reg1 = rand() % 0xE) == rand_reg0);
-        while((rand_reg2 = rand() % 0xE) == rand_reg0 || rand_reg2 == rand_reg1);
-        rand_imm0 = rand() % 0xFF;
-        while((rand_imm1 = rand() % 0xFF) == rand_imm0);
+        rand_reg0 = rand() % 0xe;
+        while((rand_reg1 = rand() % 0xe) == rand_reg0);
+        while((rand_reg2 = rand() % 0xe) == rand_reg0 || rand_reg2 == rand_reg1);
+        rand_imm0 = rand() % 0xff;
+        while((rand_imm1 = rand() % 0xff) == rand_imm0);
 
         // std::cout << "Test #: " << std::setw(3) << std::setfill('0') << i <<    "; Reg0: 0x" << AS_HEX(1, rand_reg0) << 
         //                                                                         "; Reg1: 0x" << AS_HEX(1, rand_reg1) << 
@@ -382,28 +389,28 @@ BOOST_AUTO_TEST_CASE(chip8_test_JMP){
         //                                                                         "; Imm0: 0x" << AS_HEX(1, rand_imm0) <<
         //                                                                         "; Imm1: 0x" << AS_HEX(1, rand_imm1) << std::endl;
 
-        JMP_test_prog[0x06] = 0x60 | rand_reg0; // [0x206] LD V(rand_reg0) = rand_imm0
-        JMP_test_prog[0x07] = rand_imm0;        // [0x207] LD V(rand_reg0) = rand_imm0
-        JMP_test_prog[0x08] = 0x60 | rand_reg1; // [0x208] LD V(rand_reg1) = rand_imm0
-        JMP_test_prog[0x09] = rand_imm1;        // [0x209] LD V(rand_reg1) = rand_imm0
-        JMP_test_prog[0x0A] = 0x60 | rand_reg2; // [0x20A] LD V(rand_reg2) = rand_imm0
-        JMP_test_prog[0x0B] = rand_imm0;        // [0x20B] LD V(rand_reg2) = rand_imm0
-        JMP_test_prog[0x0C] = 0x30 | rand_reg2; // [0x20C] SE V(rand_reg2) == rand_imm1
-        JMP_test_prog[0x0D] = rand_imm1;        // [0x20D] SE V(rand_reg0) == rand_imm1
-        JMP_test_prog[0x0E] = 0x30 | rand_reg0; // [0x210] SE V(rand_reg0) == rand_imm0
-        JMP_test_prog[0x0F] = rand_imm0;        // [0x211] SE V(rand_reg0) == rand_imm0
-        JMP_test_prog[0x12] = 0x40 | rand_reg0; // [0x212] SNE V(rand_reg0) != rand_imm0
-        JMP_test_prog[0x13] = rand_imm0;        // [0x213] SNE V(rand_reg0) != rand_imm0
-        JMP_test_prog[0x14] = 0x40 | rand_reg1; // [0x214] SNE V(rand_reg1) != rand_imm0
-        JMP_test_prog[0x15] = rand_imm0;        // [0x215] SNE V(rand_reg1) != rand_imm0
-        JMP_test_prog[0x18] = 0x90 | rand_reg0; // [0x218] SNE V(rand_reg0) != V(rand_reg2)
-        JMP_test_prog[0x19] = rand_reg2 << 4;   // [0x219] SNE V(rand_reg0) != V(rand_reg2)
-        JMP_test_prog[0x1A] = 0x90 | rand_reg2; // [0x21A] SNE V(rand_reg2) != V(rand_reg1)
-        JMP_test_prog[0x1B] = rand_reg1 << 4;   // [0x21B] SNE V(rand_reg2) != V(rand_reg1)
-        JMP_test_prog[0x1E] = 0x50 | rand_reg0; // [0x21E] SE V(rand_reg0) != V(rand_reg1)
-        JMP_test_prog[0x1F] = rand_reg1 << 4;   // [0x21F] SE V(rand_reg0) != V(rand_reg1)
-        JMP_test_prog[0x20] = 0x50 | rand_reg2; // [0x220] SE V(rand_reg2) != V(rand_reg0)
-        JMP_test_prog[0x21] = rand_reg0 << 4;   // [0x221] SE V(rand_reg2) != V(rand_reg0)
+        JMP_test_prog[0x08] = 0x60 | rand_reg0; // [0x208] LD V(rand_reg0) = rand_imm0
+        JMP_test_prog[0x09] = rand_imm0;        // [0x209] LD V(rand_reg0) = rand_imm0
+        JMP_test_prog[0x0a] = 0x60 | rand_reg1; // [0x20a] LD V(rand_reg1) = rand_imm0
+        JMP_test_prog[0x0b] = rand_imm1;        // [0x20b] LD V(rand_reg1) = rand_imm0
+        JMP_test_prog[0x0c] = 0x60 | rand_reg2; // [0x20c] LD V(rand_reg2) = rand_imm0
+        JMP_test_prog[0x0d] = rand_imm0;        // [0x20d] LD V(rand_reg2) = rand_imm0
+        JMP_test_prog[0x0e] = 0x30 | rand_reg2; // [0x20e] SE V(rand_reg2) == rand_imm1
+        JMP_test_prog[0x0f] = rand_imm1;        // [0x20f] SE V(rand_reg0) == rand_imm1
+        JMP_test_prog[0x10] = 0x30 | rand_reg0; // [0x210] SE V(rand_reg0) == rand_imm0
+        JMP_test_prog[0x11] = rand_imm0;        // [0x211] SE V(rand_reg0) == rand_imm0
+        JMP_test_prog[0x14] = 0x40 | rand_reg0; // [0x214] SNE V(rand_reg0) != rand_imm0
+        JMP_test_prog[0x15] = rand_imm0;        // [0x215] SNE V(rand_reg0) != rand_imm0
+        JMP_test_prog[0x16] = 0x40 | rand_reg1; // [0x216] SNE V(rand_reg1) != rand_imm0
+        JMP_test_prog[0x17] = rand_imm0;        // [0x217] SNE V(rand_reg1) != rand_imm0
+        JMP_test_prog[0x1a] = 0x90 | rand_reg0; // [0x21a] SNE V(rand_reg0) != V(rand_reg2)
+        JMP_test_prog[0x1b] = rand_reg2 << 4;   // [0x21b] SNE V(rand_reg0) != V(rand_reg2)
+        JMP_test_prog[0x1c] = 0x90 | rand_reg2; // [0x21c] SNE V(rand_reg2) != V(rand_reg1)
+        JMP_test_prog[0x1d] = rand_reg1 << 4;   // [0x21d] SNE V(rand_reg2) != V(rand_reg1)
+        JMP_test_prog[0x20] = 0x50 | rand_reg0; // [0x220] SE V(rand_reg0) == V(rand_reg1)
+        JMP_test_prog[0x21] = rand_reg1 << 4;   // [0x221] SE V(rand_reg0) == V(rand_reg1)
+        JMP_test_prog[0x22] = 0x50 | rand_reg2; // [0x222] SE V(rand_reg2) == V(rand_reg0)
+        JMP_test_prog[0x23] = rand_reg0 << 4;   // [0x223] SE V(rand_reg2) == V(rand_reg0)
 
 
 
@@ -412,25 +419,72 @@ BOOST_AUTO_TEST_CASE(chip8_test_JMP){
 
         chip8 ch8(time(NULL), test_prog_istream);
 
-        for(int j=0; j<13; j++){
+        for(int j=0; j<15; j++){
             RUN_TICK();
         }
 
     }
 }
 
+BOOST_AUTO_TEST_CASE(chip8_test_CALL){
+    uint8_t CALL_test_prog[] = {0x22, 0x18, // [0x200] CALL 0x218
+                                0x60, 0x00, // [0x202] LD V(0) = 0
+                                0x00, 0x00, // [0x204] NOP
+                                0x22, 0x1c, // [0x206] CALL 0x21c
+                                0x00, 0xee, // [0x208] RET
+                                0x22, 0x20, // [0x20a] CALL 0x220
+                                0x00, 0xee, // [0x20c] RET
+                                0x22, 0x2c, // [0x20e] CALL 0x22c
+                                0x00, 0xee, // [0x210] RET
+                                0x00, 0x00, // [0x212] NOP
+                                0x22, 0x24, // [0x214] CALL 0x224
+                                0x00, 0xee, // [0x216] RET
+                                0x22, 0x06, // [0x218] CALL 0x206
+                                0x00, 0xee, // [0x21a] RET
+                                0x22, 0x28, // [0x21c] CALL 0x228
+                                0x00, 0xee, // [0x21e] RET
+                                0x22, 0x14, // [0x220] CALL 0x214
+                                0x00, 0xee, // [0x222] RET
+                                0x22, 0x0e, // [0x224] CALL 0x20e
+                                0x00, 0xee, // [0x226] RET
+                                0x22, 0x0a, // [0x228] CALL 0x20a
+                                0x00, 0xee, // [0x22a] RET
+                                0x22, 0x3c, // [0x22c] CALL 0x23c
+                                0x00, 0xee, // [0x22e] RET
+                                0x22, 0x40, // [0x230] CALL 0x240
+                                0x00, 0xee, // [0x232] RET
+                                0x22, 0x42, // [0x234] CALL 0x242
+                                0x00, 0xee, // [0x236] RET
+                                0x22, 0x34, // [0x238] CALL 0x234
+                                0x00, 0xee, // [0x23a] RET
+                                0x22, 0x30, // [0x23c] CALL 0x230
+                                0x00, 0xee, // [0x23e] RET
+                                0x22, 0x38, // [0x240] CALL 0x238
+                                0x00, 0xee, // [0x242] RET
+    };
+
+    membuff test_prog_stream((char*) CALL_test_prog, (char*) (CALL_test_prog + sizeof(CALL_test_prog)));
+    std::istream test_prog_istream(&test_prog_stream);
+
+    chip8 ch8(time(NULL), test_prog_istream);
+
+    for(int j=0; j<33; j++){
+        RUN_TICK();
+    }
+}
+
 BOOST_AUTO_TEST_CASE(chip8_test_BITWISE){
 
-    uint8_t BITWISE_test_prog[0x1C]; 
+    uint8_t BITWISE_test_prog[0x1c]; 
 
     SEED_RAND();
 
     uint8_t rand_reg0, rand_reg1, rand_imm0, rand_imm1;
     for(int i = 0; i< NUM_FUZZ_TESTS; i++){
-        rand_reg0 = rand() % 0xF;
-        while((rand_reg1 = rand() % 0xF) == rand_reg0);
-        (rand_imm0 = 0x01 | (rand() & 0x7F));
-        (rand_imm1 = 0x80 | (rand() & 0xFE));
+        rand_reg0 = rand() % 0xf;
+        while((rand_reg1 = rand() % 0xf) == rand_reg0);
+        (rand_imm0 = 0x01 | (rand() & 0x7f));
+        (rand_imm1 = 0x80 | (rand() & 0xfe));
 
         BITWISE_test_prog[0x00] = 0x60 | rand_reg0;       // [0x200] LD V(rand_reg0) = rand_imm0
         BITWISE_test_prog[0x01] = rand_imm0;              // [0x201] LD V(rand_reg0) = rand_imm0
@@ -442,12 +496,12 @@ BOOST_AUTO_TEST_CASE(chip8_test_BITWISE){
         BITWISE_test_prog[0x07] = rand_imm1;              // [0x207] LD V(rand_reg1) = rand_imm1
         BITWISE_test_prog[0x08] = 0x80 | rand_reg0;       // [0x208] AND V(rand_reg0) &= V(rand_reg1)
         BITWISE_test_prog[0x09] = (rand_reg1 << 4) | 0x2; // [0x209] AND V(rand_reg0) &= V(rand_reg1)
-        BITWISE_test_prog[0x0A] = 0x60 | rand_reg0;       // [0x20A] LD V(rand_reg0) = rand_imm0
-        BITWISE_test_prog[0x0B] = rand_imm0;              // [0x20B] LD V(rand_reg0) = rand_imm0
-        BITWISE_test_prog[0x0C] = 0x80 | rand_reg1;       // [0x20C] XOR V(rand_reg1) ^= V(rand_reg0)
-        BITWISE_test_prog[0x0D] = (rand_reg0 << 4) | 0x3; // [0x20D] XOR V(rand_reg1) ^= V(rand_reg0)
-        BITWISE_test_prog[0x0E] = 0x60 | rand_reg1;       // [0x20E] LD V(rand_reg1) = rand_imm1
-        BITWISE_test_prog[0x0F] = rand_imm1;              // [0x20F] LD V(rand_reg1) = rand_imm1
+        BITWISE_test_prog[0x0a] = 0x60 | rand_reg0;       // [0x20a] LD V(rand_reg0) = rand_imm0
+        BITWISE_test_prog[0x0b] = rand_imm0;              // [0x20b] LD V(rand_reg0) = rand_imm0
+        BITWISE_test_prog[0x0c] = 0x80 | rand_reg1;       // [0x20c] XOR V(rand_reg1) ^= V(rand_reg0)
+        BITWISE_test_prog[0x0d] = (rand_reg0 << 4) | 0x3; // [0x20d] XOR V(rand_reg1) ^= V(rand_reg0)
+        BITWISE_test_prog[0x0e] = 0x60 | rand_reg1;       // [0x20e] LD V(rand_reg1) = rand_imm1
+        BITWISE_test_prog[0x0f] = rand_imm1;              // [0x20f] LD V(rand_reg1) = rand_imm1
         BITWISE_test_prog[0x10] = 0x80 | rand_reg0;       // [0x210] SHR V(rand_reg0) >>= 1; **SHIFT 1 OUT**
         BITWISE_test_prog[0x11] = 0x6;                    // [0x211] SHR V(rand_reg0) >>= 1; **SHIFT 1 OUT**
         BITWISE_test_prog[0x12] = 0x60 | rand_reg0;       // [0x212] LD V(rand_reg0) = rand_imm0
@@ -457,9 +511,9 @@ BOOST_AUTO_TEST_CASE(chip8_test_BITWISE){
         BITWISE_test_prog[0x16] = 0x60 | rand_reg1;       // [0x216] LD V(rand_reg1) = rand_imm1
         BITWISE_test_prog[0x17] = rand_imm1;              // [0x217] LD V(rand_reg1) = rand_imm1
         BITWISE_test_prog[0x18] = 0x80 | rand_reg0;       // [0x218] SHL V(rand_reg0) <<= 1; **SHIFT 0 OUT**
-        BITWISE_test_prog[0x19] = 0xE;                    // [0x219] SHL V(rand_reg0) <<= 1; **SHIFT 0 OUT**
-        BITWISE_test_prog[0x1A] = 0x80 | rand_reg1;       // [0x21A] SHL V(rand_reg1) <<= 1; **SHIFT 1 OUT**
-        BITWISE_test_prog[0x1B] = 0xE;                    // [0x21b] SHL V(rand_reg1) <<= 1; **SHIFT 1 OUT**
+        BITWISE_test_prog[0x19] = 0xe;                    // [0x219] SHL V(rand_reg0) <<= 1; **SHIFT 0 OUT**
+        BITWISE_test_prog[0x1a] = 0x80 | rand_reg1;       // [0x21a] SHL V(rand_reg1) <<= 1; **SHIFT 1 OUT**
+        BITWISE_test_prog[0x1b] = 0xe;                    // [0x21b] SHL V(rand_reg1) <<= 1; **SHIFT 1 OUT**
 
 
 
@@ -473,34 +527,34 @@ BOOST_AUTO_TEST_CASE(chip8_test_BITWISE){
         RUN_TICK();
         RUN_TICK();
         RUN_TICK();
-        TEST_ASSERT(ch8.v_regs[rand_reg1] == ((rand_imm1 | rand_imm0) & 0xFF), "OR test case failed, incorrect bitwise OR result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> | V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << ">; Expected: V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, (rand_imm1 | rand_imm0) & 0xFF) << ">; Actual V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, ch8.V(rand_reg1)) << ">");
+        TEST_ASSERT(ch8.v_regs[rand_reg1] == ((rand_imm1 | rand_imm0) & 0xff), "OR test case failed, incorrect bitwise OR result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> | V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << ">; Expected: V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, (rand_imm1 | rand_imm0) & 0xff) << ">; Actual V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, ch8.V(rand_reg1)) << ">");
 
         RUN_TICK();
         RUN_TICK();
-        TEST_ASSERT(ch8.v_regs[rand_reg0] == ((rand_imm0 & rand_imm1) & 0xFF), "AND test case failed, incorrect bitwise AND result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> & V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << ">; Expected: V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, (rand_imm0 & rand_imm1) & 0xFF) << ">; Actual V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, ch8.V(rand_reg0)) << ">");
+        TEST_ASSERT(ch8.v_regs[rand_reg0] == ((rand_imm0 & rand_imm1) & 0xff), "AND test case failed, incorrect bitwise AND result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> & V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << ">; Expected: V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, (rand_imm0 & rand_imm1) & 0xff) << ">; Actual V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, ch8.V(rand_reg0)) << ">");
 
         RUN_TICK();
         RUN_TICK();
-        TEST_ASSERT(ch8.v_regs[rand_reg1] == ((rand_imm1 ^ rand_imm0) & 0xFF), "XOR test case failed, incorrect bitwise XOR result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> ^ V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << ">; Expected: V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, (rand_imm1 ^ rand_imm0) & 0xFF) << ">; Actual V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, ch8.V(rand_reg1)) << ">");
+        TEST_ASSERT(ch8.v_regs[rand_reg1] == ((rand_imm1 ^ rand_imm0) & 0xff), "XOR test case failed, incorrect bitwise XOR result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> ^ V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << ">; Expected: V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, (rand_imm1 ^ rand_imm0) & 0xff) << ">; Actual V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, ch8.V(rand_reg1)) << ">");
 
         RUN_TICK();
         RUN_TICK();
-        TEST_ASSERT(ch8.v_regs[rand_reg0] == ((rand_imm0 >> 1) & 0xFF), "SHR test case failed, incorrect logical shift right result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> >> <0x1>; Expected: V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, (rand_imm0 >> 1) & 0xFF) << ">; Actual V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, ch8.V(rand_reg0)) << ">");
-        TEST_ASSERT(ch8.v_regs[0xF] == 0x01, "SHR test case failed, incorrect shift out flag result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> >> <0x1>; Expected: V(F)<0x01>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xF)) << ">");
+        TEST_ASSERT(ch8.v_regs[rand_reg0] == ((rand_imm0 >> 1) & 0xff), "SHR test case failed, incorrect logical shift right result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> >> <0x1>; Expected: V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, (rand_imm0 >> 1) & 0xff) << ">; Actual V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, ch8.V(rand_reg0)) << ">");
+        TEST_ASSERT(ch8.v_regs[0xf] == 0x01, "SHR test case failed, incorrect shift out flag result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> >> <0x1>; Expected: V(F)<0x01>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xf)) << ">");
 
         RUN_TICK();
         RUN_TICK();
-        TEST_ASSERT(ch8.v_regs[rand_reg1] == ((rand_imm1 >> 1) & 0xFF), "SHR test case failed, incorrect logical shift right result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> >> <0x1>; Expected: V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, (rand_imm1 >> 1) & 0xFF) << ">; Actual V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, ch8.V(rand_reg1)) << ">");
-        TEST_ASSERT(ch8.v_regs[0xF] == 0x00, "SHR test case failed, incorrect shift out flag result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> >> <0x1>; Expected: V(F)<0x00>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xF)) << ">");
+        TEST_ASSERT(ch8.v_regs[rand_reg1] == ((rand_imm1 >> 1) & 0xff), "SHR test case failed, incorrect logical shift right result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> >> <0x1>; Expected: V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, (rand_imm1 >> 1) & 0xff) << ">; Actual V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, ch8.V(rand_reg1)) << ">");
+        TEST_ASSERT(ch8.v_regs[0xf] == 0x00, "SHR test case failed, incorrect shift out flag result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> >> <0x1>; Expected: V(F)<0x00>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xf)) << ">");
 
         RUN_TICK();
         RUN_TICK();
-        TEST_ASSERT(ch8.v_regs[rand_reg0] == ((rand_imm0 << 1) & 0xFF), "SHR test case failed, incorrect logical shift left result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> << <0x1>; Expected: V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, (rand_imm0 >> 1) & 0xFF) << ">; Actual V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, ch8.V(rand_reg0)) << ">");
-        TEST_ASSERT(ch8.v_regs[0xF] == 0x00, "SHR test case failed, incorrect shift out flag result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> >> <0x1>; Expected: V(F)<0x00>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xF)) << ">");
+        TEST_ASSERT(ch8.v_regs[rand_reg0] == ((rand_imm0 << 1) & 0xff), "SHR test case failed, incorrect logical shift left result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> << <0x1>; Expected: V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, (rand_imm0 >> 1) & 0xff) << ">; Actual V(0x" << AS_HEX(1, rand_reg0) <<")<0x" << AS_HEX(2, ch8.V(rand_reg0)) << ">");
+        TEST_ASSERT(ch8.v_regs[0xf] == 0x00, "SHR test case failed, incorrect shift out flag result; V(0x" << AS_HEX(1, rand_reg0) << ") = V(0x" << AS_HEX(1, rand_reg0) << ")<0x" << AS_HEX(2, rand_imm0) << "> >> <0x1>; Expected: V(F)<0x00>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xf)) << ">");
 
         RUN_TICK();
-        TEST_ASSERT(ch8.v_regs[rand_reg1] == ((rand_imm1 << 1) & 0xFF), "SHR test case failed, incorrect logical shift left result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> << <0x1>; Expected: V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, (rand_imm1 >> 1) & 0xFF) << ">; Actual V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, ch8.V(rand_reg1)) << ">");
-        TEST_ASSERT(ch8.v_regs[0xF] == 0x01, "SHR test case failed, incorrect shift out flag result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> >> <0x1>; Expected: V(F)<0x01>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xF)) << ">");
+        TEST_ASSERT(ch8.v_regs[rand_reg1] == ((rand_imm1 << 1) & 0xff), "SHR test case failed, incorrect logical shift left result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> << <0x1>; Expected: V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, (rand_imm1 >> 1) & 0xff) << ">; Actual V(0x" << AS_HEX(1, rand_reg1) <<")<0x" << AS_HEX(2, ch8.V(rand_reg1)) << ">");
+        TEST_ASSERT(ch8.v_regs[0xf] == 0x01, "SHR test case failed, incorrect shift out flag result; V(0x" << AS_HEX(1, rand_reg1) << ") = V(0x" << AS_HEX(1, rand_reg1) << ")<0x" << AS_HEX(2, rand_imm1) << "> >> <0x1>; Expected: V(F)<0x01>; Actual: V(F)<0x" << AS_HEX(2, ch8.V(0xf)) << ">");
     
     }
 }

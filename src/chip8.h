@@ -34,7 +34,6 @@
 union tick_result{
     bitfield<uint8_t, 0, 1> display_update;
     bitfield<uint8_t, 1, 1> sound_state;
-    bitfield<uint8_t, 2, 1> error;
     bitfield<uint8_t, 0, 2> all;
 };
 
@@ -69,7 +68,7 @@ private:
                                                         0x20, 0x60, 0x20, 0x20, 0x70, /* 1 */
                                                         0xF0, 0x10, 0xF0, 0x80, 0xF0, /* 2 */
                                                         0xF0, 0x10, 0xF0, 0x10, 0xF0, /* 3 */
-                                                        0x90, 0x90, 0x10, 0xF0, 0xF0, /* 4 */
+                                                        0x90, 0x90, 0xF0, 0x10, 0x10, /* 4 */
                                                         0xF0, 0x80, 0xF0, 0x10, 0xF0, /* 5 */
                                                         0xF0, 0x80, 0xF0, 0x90, 0xF0, /* 6 */
                                                         0xF0, 0x10, 0x20, 0x40, 0x40, /* 7 */

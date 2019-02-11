@@ -156,6 +156,7 @@ void chip8_emulator::handle_reset(bool press_state, bool repeat){
     if(press_state && !repeat){
         chip8_instance.reset();
         chip8_instance.load(rom_path);
+        chip8_running = true;
     }
 }
 
@@ -167,14 +168,16 @@ void chip8_emulator::run(){
     while(running){
         beg = std::chrono::high_resolution_clock::now();
         if(running && chip8_running && !chip8_paused){
-            tick_result res = chip8_instance.run_tick();
-            if(res.error)
-                chip8_running = false;
-            else{
+            try{
+                tick_result res = chip8_instance.run_tick();
                 if(res.display_update){
                     render_frame();
                 }
                 update_sound_state(res.sound_state);
+            }
+            catch(std::string error_msg){
+                LOG_ERROR(error_msg, logger::endl);
+                chip8_running = false;
             }
         }
         else if(chip8_paused){

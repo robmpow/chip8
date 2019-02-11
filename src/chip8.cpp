@@ -15,32 +15,6 @@
 #include "chip8_util.h"
 #include "logger_impl.hpp"
 
-/*
- *      Memory Map
- *  _____ 0x0000 _____
- * |        *         |
- * |        *         |
- * |   Main Memory    |
- * |        *         |
- * |        *         |
- * |_____ 0x1000 _____|
- * |   V Reg (0-F)    |
- * |_____ 0x1010 _____|
- * |      Reg I       |
- * |_____ 0x1012 _____|
- * |    Reg DT/ST     |
- * |_____ 0x1014 _____|
- * |      Stack       |
- * |_____ 0x1034 _____|
- * |  Display Bitmap  |
- * |_____ 0x1834 _____|
- */
-
-extern uint8_t* allocate();
-extern void deallocate(uint8_t* mem);
-
-
-
 chip8::chip8(uint seed, std::string file_name) : dist(0, 255){
     this->seed = seed;
     reset(seed);
@@ -143,10 +117,10 @@ tick_result chip8::run_tick() {
     tick_result tick_res;
     tick_res.display_update = 0;
     tick_res.sound_state = 0;
-    tick_res.error = 0;
 
-    t_counter++;
-    if(t_counter == 10){
+    LOG_TRACE("chip8: t_counter:", static_cast<uint>(t_counter), logger::endl);
+
+    if(++t_counter >= 10){
         t_counter = 0;
         if(dt_reg){
             dt_reg--;
@@ -155,9 +129,8 @@ tick_result chip8::run_tick() {
             st_reg--;
             tick_res.sound_state = 1;
         }
-        else{
+        else
             tick_res.sound_state = 0;
-        }
     }
 
     uint16_t arith_res;
@@ -166,6 +139,8 @@ tick_result chip8::run_tick() {
     #else
         uint16_t op = *((uint16_t*)  (memory + program_counter));
     #endif
+    LOG_DEBUG("chip8: pc: ", std::hex, std::setw(4), std::setfill('0'), program_counter, logger::endl);
+    LOG_DEBUG("chip8: op: ", std::hex, std::setw(4), std::setfill('0'), op, logger::endl);
     switch(op & 0xf000){
         case 0x0000:
             switch(op & 0x0fff){
@@ -177,16 +152,18 @@ tick_result chip8::run_tick() {
                     break;
                 case 0x0ee:
                     //RET
-                    if(stack_pointer == 0xf){
-                        tick_res.error = 1;
-                        LOG_ERROR("chip8: Stack wrap, call stack empty, triggered by RET at address <0x", std::hex, std::setfill('0'), std::setw(4), program_counter, ">.", logger::endl);
-                    }
-                    program_counter = stack[stack_pointer--];
+                    // if(stack_pointer == 0xf){
+                    //     std::stringstream err_msg_stream;
+                    //     err_msg_stream << "chip8: Stack wrap, call stack empty, triggered by RET at address <0x" << std::hex << std::setfill('0') << std::setw(4) << program_counter << ">.";
+                    //     throw err_msg_stream.str();
+                    // }
+                    program_counter = stack[++stack_pointer];
                     program_counter += 2;
                     break;
                 default:
-                    tick_res.error = 1;
-                    LOG_ERROR("chip8: Unknown opcode <0x", std::hex, std::setfill('0'), std::setw(4), op, "> at address <0x", std::hex, std::setfill('0'), std::setw(4), program_counter, ">.", logger::endl);
+                    std::stringstream err_msg_stream;
+                    err_msg_stream << "chip8: Unknown opcode <0x" << std::hex << std::setfill('0') << std::setw(4) << op << "> at address <0x" << std::hex << std::setfill('0') << std::setw(4) << program_counter << ">.";
+                    throw err_msg_stream.str();
             }
             break;
         case 0x1000:
@@ -195,10 +172,11 @@ tick_result chip8::run_tick() {
             break;
         case 0x2000:
             // CALL nnn
-            if(stack_pointer == 0x0){
-                tick_res.error = 1;
-                LOG_ERROR("chip8: Stack wrap, call stack full, triggered by CALL at address <0x", std::hex, std::setfill('0'), std::setw(4), program_counter, ">.", logger::endl);
-            }
+            // if(stack_pointer == 0x0){
+            //     std::stringstream err_msg_stream;
+            //     err_msg_stream << "chip8: Stack wrap, call stack full, triggered by CALL at address <0x" << std::hex << std::setfill('0') << std::setw(4) << program_counter << ">.";
+            //     throw err_msg_stream.str();
+            // }
             stack[stack_pointer--] = program_counter;
             program_counter = NNN;
             break;
@@ -287,8 +265,9 @@ tick_result chip8::run_tick() {
                     program_counter+=2;
                     break;
                 default:
-                    tick_res.error = 1;
-                    LOG_ERROR("chip8: Unknown opcode <0x", std::hex, std::setfill('0'), std::setw(4), op, "> at address <0x", std::hex, std::setfill('0'), std::setw(4), program_counter, ">.", logger::endl);
+                    std::stringstream err_msg_stream;
+                    err_msg_stream << "chip8: Unknown opcode <0x" << std::hex << std::setfill('0') << std::setw(4) << op << "> at address <0x" << std::hex << std::setfill('0') << std::setw(4) << program_counter << ">.";
+                    throw err_msg_stream.str();
         }
             break;
         case 0x9000:
@@ -317,11 +296,18 @@ tick_result chip8::run_tick() {
             // DRW VX, VY, NIB
             for(int i = 0; i < NIB; i++){
                 uint8_t sprite_byte = memory[i_reg + i];
-                V(0xf) |= (disp[(VX >> 3) + (VY + i) * (DISP_X >> 3)] & (sprite_byte >> (VX & 0x7)))? 1 : 0;
-                disp[(VX >> 3) + (VY + i) * (DISP_X >> 3)] ^= (sprite_byte >> (VX & 0x7));
+                uint8_t sprite_x = VX >> 3, sprite_y = VY + i;
+                if(sprite_y > 0x1f){
+                    sprite_y -= 0x20;
+                }
+                V(0xf) |= (disp[sprite_x + sprite_y * (DISP_X >> 3)] & (sprite_byte >> (VX & 0x7)))? 1 : 0;
+                disp[sprite_x + sprite_y * (DISP_X >> 3)] ^= (sprite_byte >> (VX & 0x7));
                 if(VX & 0x7){
-                        V(0xf) |= (disp[(VX >> 3) + (VY + i) * (DISP_X >> 3) + 1] & (sprite_byte << (8 - (VX & 0x7))))? 1 : 0;
-                        disp[(VX >> 3) + (VY + i) * (DISP_X >> 3) + 1] ^= (sprite_byte << (8 - (VX & 0x7)));
+                    if(sprite_x + 1 > 0x3f){
+                        sprite_x -= 0x3f;
+                    }
+                        V(0xf) |= (disp[sprite_x + sprite_y * (DISP_X >> 3)] & (sprite_byte << (8 - (VX & 0x7))))? 1 : 0;
+                        disp[sprite_x + sprite_y * (DISP_X >> 3)] ^= (sprite_byte << (8 - (VX & 0x7)) & 0xff);
                 }
             }
             tick_res.display_update = 1;
@@ -344,8 +330,9 @@ tick_result chip8::run_tick() {
                     program_counter+=2;
                     break;
                 default:
-                    tick_res.error = 1;
-                    LOG_ERROR("chip8: Unknown opcode <0x", std::hex, std::setfill('0'), std::setw(4), op, "> at address <0x", std::hex, std::setfill('0'), std::setw(4), program_counter, ">.", logger::endl);          
+                    std::stringstream err_msg_stream;
+                    err_msg_stream << "chip8: Unknown opcode <0x" << std::hex << std::setfill('0') << std::setw(4) << op << "> at address <0x" << std::hex << std::setfill('0') << std::setw(4) << program_counter << ">.";
+                    throw err_msg_stream.str();
             }
             break;
         case 0xf000:
@@ -397,24 +384,26 @@ tick_result chip8::run_tick() {
                     break;
                 case 0x55:
                     // LD [I], VX
-                    for(uint8_t i = 0; i < 0x10; i++)
+                    for(uint8_t i = 0; i <= OP_X; i++)
                         memory[i_reg + i] = V(i);
                     program_counter+=2; 
                     break;
                 case 0x65:
                     // LD VX, [I]
-                    for(uint8_t i = 0; i < 0x10; i++)
+                    for(uint8_t i = 0; i <= OP_X; i++)
                         V(i) = memory[i_reg + i]; 
                     program_counter+=2;
                     break;
                 default:
-                    tick_res.error = 1;
-                    LOG_ERROR("chip8: Unknown opcode <0x", std::hex, std::setfill('0'), std::setw(4), op, "> at address <0x", std::hex, std::setfill('0'), std::setw(4), program_counter, ">.", logger::endl);
+                    std::stringstream err_msg_stream;
+                    err_msg_stream << "chip8: Unknown opcode <0x" << std::hex << std::setfill('0') << std::setw(4) << op << "> at address <0x" << std::hex << std::setfill('0') << std::setw(4) << program_counter << ">.";
+                    throw err_msg_stream.str();
             }
             break;
         default:
-                tick_res.error = 1;
-                LOG_ERROR("chip8: Unknown opcode <0x", std::hex, std::setfill('0'), std::setw(4), op, "> at address <0x", std::hex, std::setfill('0'), std::setw(4), program_counter, ">.", logger::endl);
+                std::stringstream err_msg_stream;
+                    err_msg_stream << "chip8: Unknown opcode <0x" << std::hex << std::setfill('0') << std::setw(4) << op << "> at address <0x" << std::hex << std::setfill('0') << std::setw(4) << program_counter << ">.";
+                    throw err_msg_stream.str();
     }
 
     return tick_res;

@@ -44,16 +44,9 @@ namespace logger {
     template<typename T>
     class logger{
         protected:
-            // static log_level level;    
-            // T* log_interface = NULL;
-            // static uint32_t log_line;
-            // static bool color_enable;
-            // static bool log_enable;
 
             log_level level;    
             T* log_interface = NULL;
-            uint32_t log_line;
-            bool color_enable;
             bool log_enable;
 
             std::string build_log_msg(std::stringstream& ss){
@@ -74,23 +67,15 @@ namespace logger {
             }
 
         public:
-            logger(){
-                log_interface = new T;
-            }
+            logger() : level(log_warning), log_interface(new T), log_enable(true){}
 
-            logger(log_level ll){
-                level = ll;
-                log_interface = new T;
-            }
+            logger(log_level ll) : level(ll), log_interface(new T), log_enable(true){}
 
-            logger(std::string base_file_name){
-                log_interface = new T;
+            logger(std::string base_file_name) : level(log_warning), log_interface(new T(base_file_name)), log_enable(true){
                 log_interface->open_ostream(base_file_name);
             }
 
-            logger(log_level ll, std::string base_file_name){
-                level = ll;
-                log_interface = new T;
+            logger(log_level ll, std::string base_file_name) : level(log_warning), log_interface(new T(base_file_name)), log_enable(true){
                 log_interface->open_ostream(base_file_name);
             }
 
@@ -114,7 +99,7 @@ namespace logger {
 
             template<log_level L, typename...Args>
             void log(Args...args){
-                if(L <= level){
+                if(L <= level && log_enable){
                     log_interface->write(L, build_log_msg(args...));
                 }
             }

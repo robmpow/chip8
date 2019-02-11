@@ -63,6 +63,7 @@ namespace logger{
                     log_stream << get_log_heading(ll, false) << log_msg;
                 }
                 std::cout << get_log_heading(ll, true) << log_msg;
+                log_line++;
             }
 
             void close_ostream(){
