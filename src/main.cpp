@@ -17,12 +17,12 @@
 #include <ctype.h>
 #include <algorithm>
 
-#include "chip8.h"
-#include "chip8_util.h"
-#include "ini_reader.h"
-#include "key_handler_impl.h"
-#include "chip8_emulator.h"
-#include "logger_impl.hpp"
+#include "Chip8.hpp"
+#include "Chip8Util.hpp"
+#include "IniReader.hpp"
+#include "KeyHandler.hpp"
+#include "Chip8Emulator.hpp"
+#include "LoggerImpl.hpp"
 
 #include <SDL2/SDL.h>
 
@@ -30,60 +30,62 @@ static const option long_opts[] =   {{"resolution",  required_argument,  0,  'r'
                                      {"log_enable",  optional_argument,  0,  0},
                                      {"log_level",   required_argument,  0,  0},
                                      {"log_file",    optional_argument,  0,  0},
+                                     {"config",      required_argument,  0,  'c'},
                                      {"help",        no_argument,        0,  'h'},
                                      {0,             0,                  0,  0}};
 
-static const char usage[] = "rom_file [-r | -res widthxheight] [-h | --help] [--log_enable=true/false] [--log_level level] [--log_file file]\n"
-                            "\t-r | --res wxh: sets the starting display resolution width to w and height to h.\n"
-                            "\t-l | --log severity_level: enables logging, if a severity_level is provided "
-                            "\t-f | --log_file filepath: enables logging, if filepath is provided the logfile is set to filepath.\n";
+static const char usage[] = "[ROM File] [Options]\n"
+                            "\t-r, --res=WxH           set the display resolution to WxH\n"
+                            "\t-c, --config=FILE       set emulator ini file to read configuration from.\n" 
+                            "\t    --log_level=LEVEL   set logger level, any message with level below LEVEL is ignored;\n"
+                            "\t                        LEVEL can be 'all', 'fatal', 'error', 'warning', 'debug', 'trace'\n"
+                            "\t                        'info'\n"
+                            "\t    --log_file[=FILE]   enables logging and sets the desination file; if FILE is omitted\n"
+                            "\t                        the default log file is used: ./log/chip8_MM-DD-YYYY_HH:MM:SS.log\n"
+                            "\t    --log_enable[=BOOL] sets logger enable to BOOL; BOOL can be 'true' | '1' (default),\n"
+                            "\t                        'false' | '0'\n"
+                            "\t-h, --help              Prints this usage message then exits.";
 
 namespace arg = std::placeholders;
 
 int main(int argc, char** argv){
 
-    std::pair<int, int> resolution;
+    std::pair<int, int> resolution = {0, 0};
     std::pair<SDL_Color, SDL_Color> palette;
-    std::unordered_map<key_enum, key_action> bind_map;
+    std::unordered_map<Chip8::KeyHandler::KeyPair, Chip8::KeyHandler::KeyAction> bindMap;
 
     union{
-        bitfield<uint8_t, 0, 1> log;
-        bitfield<uint8_t, 1, 1> force_log;
-        bitfield<uint8_t, 2, 1> log_file;
-        bitfield<uint8_t, 0, 8> all;
+        Bitfield::Bitfield<uint8_t, 0, 1> log;
+        Bitfield::Bitfield<uint8_t, 1, 1> force_log;
+        Bitfield::Bitfield<uint8_t, 2, 1> logFile;
+        Bitfield::Bitfield<uint8_t, 0, 8> all;
     } flags;
 
     flags.all = 0;
 
     int opt, longopt_ind = 0;
-    std::string rom_path;
-    std::string log_file;
+    std::string romPath;
+    std::string logFile;
+    std::string configFile = "res/config.ini";
+    std::regex resolutionRegex("(\\d*)x(\\d*)");
+    std::cmatch matchRes;
     opterr = 0;
-    while((opt = getopt_long(argc, argv, "r:h", long_opts, &longopt_ind)) != -1){
+    while((opt = getopt_long(argc, argv, "r:c:h", long_opts, &longopt_ind)) != -1){
         switch(opt){
             case 'r':
-                if(optarg){
-                    char* split;
-                    resolution.first = strtoul(optarg, &split, 10);
-                    if(*split){
-                        resolution.second = strtoul(split + 1, NULL, 10);
-                    }
-                    else{
-                        LOG_FATAL("Error: [-r | -res wxh ]: invalid screen resolution format.", logger::endl);
-                        exit(-1);
-                    }
-                    if(!resolution.first || !resolution.second){
-                        LOG_FATAL("Error: [-r | -res wxh ]: invalid screen resolution format.", logger::endl);
-                        exit(-1);
-                    }
+                if(std::regex_match(optarg, matchRes, resolutionRegex)){
+                    resolution.first = std::strtoul(matchRes[1].str().c_str(), nullptr, 10);
+                    resolution.second = std::strtoul(matchRes[2].str().c_str(), nullptr, 10);
                 }
                 else{
-                    LOG_FATAL("Error: [-r | --res wxh]: missing screen resolution argument.", logger::endl);
+                    std::cerr << argv[0] << ": Error option '-r | --resolution' argument '" << optarg << "' is not recognized\nTry '" << argv[0] << " --help for more information" << std::endl;
                     exit(-1);
                 }
                 break;
+            case 'c':
+                configFile = std::string(optarg);
             case 'h':
-                std::cout << "usage: " << argv[0] << usage << std::endl;
+                std::cout << "Usage: " << argv[0] << usage << std::endl;
                 exit(0);
             case 0:
                 switch(longopt_ind){
@@ -92,20 +94,20 @@ int main(int argc, char** argv){
                         if(optarg){
                             std::string opt_string(optarg);
                             std::transform(opt_string.begin(), opt_string.end(), opt_string.begin(), ::tolower);
-                            if(opt_string.compare("1")){
+                            if(!opt_string.compare("1")){
                                 flags.force_log = 1;
                             }
-                            else if(opt_string.compare("0")){
+                            else if(!opt_string.compare("0")){
                                 flags.force_log = 0;
                             }
-                            else if(opt_string.compare("true")){
+                            else if(!opt_string.compare("true")){
                                 flags.force_log = 1;
                             }
-                            else if(opt_string.compare("false")){
+                            else if(!opt_string.compare("false")){
                                 flags.force_log = 0;
                             }
                             else{
-                                LOG_FATAL("Error: Unknown argument '", optarg, "' for option '", optopt, "'", logger::endl);
+                                std::cerr << argv[0] << ": Error option '--log_enable' argument '" << optarg << "' is not recognized\nTry '" << argv[0] << " --help for more information" << std::endl;
                                 exit(-1);
                             }
                         }
@@ -115,27 +117,18 @@ int main(int argc, char** argv){
                         break;
                     case 2:
                         // log_level
-                        if(optarg){
-                            int8_t level;
-                            if((level = logger::stringToLogLevel(std::string(optarg))) != -1){
-                                chip8_logger.set_log_level(static_cast<logger::log_level>(level));
-                            }
-                            else{
-                                LOG_FATAL("Error: [-log_level level]: unrecognized level argument, valid level arguments: {fatal, error, warning, debug, trace, info, all}", logger::endl);
-                                exit(-1);
-                            }
+                        try{
+                            chip8Logger.setLogLevel(Logger::getLevelFromString(optarg));
                         }
-                        else{
-                            LOG_FATAL("Error: [-log_level level]: log_level requires level argument: {fatal, error, warning, debug, trace, info, all}.", logger::endl);
+                        catch(const Logger::LoggerException& except){
+                            std::cerr << argv[0] << ": Error option '--log_level' argument " << except.what() << "\nTry '" << argv[0] << " --help for more information" << std::endl;
                             exit(-1);
                         }
                         break;
                     case 3:
-                        // log_file
-                        flags.log_file = 1;
-                        if(optarg){
-                            log_file = std::string(optarg);
-                        }
+                        // logFile
+                        flags.logFile = 1;
+                        logFile = std::string(optarg);
                         break;
                 }
                 break;
@@ -144,11 +137,11 @@ int main(int argc, char** argv){
                 break;
             case 'f':
                 flags.log |= 1;
-                flags.log_file = 1;
+                flags.logFile = 1;
 
             case '?':
-                LOG_FATAL("Error: Unknown option '", static_cast<char>(optopt), "'.\n");
-                std::cout << "usage: " << argv[0] << usage << std::endl;
+                std::cerr << argv[0] << ": Error unknown option '" << static_cast<char>(optopt) << "'" << std::endl;
+                std::cout << "Usage: " << argv[0] << " " << usage << std::endl;
                 exit(-1);
             default:
                 break;
@@ -157,51 +150,34 @@ int main(int argc, char** argv){
 
     while(optind < argc){
         const char* type;
-        if((type = fileExists(argv[optind])) != reg_file){
+        if((type = Chip8::Util::fileExists(argv[optind])) != Chip8::Util::regFile){
             if(type){
-                LOG_FATAL("Error: ", argv[optind], ": File type ", type, " is not supported.\n");
+                std::cerr << argv[0] << ": Error file '" << argv[optind] << "' is not supported" << std::endl;
                 exit(-1);
             }
-            LOG_FATAL("Error: ", argv[optind], ": file not found.\n");
+            std::cerr << argv[0] << ": Error file '" << argv[optind] <<  "' not found" << std::endl;
             exit(-1);
         }
-        rom_path = argv[optind];
+     romPath = argv[optind];
         optind++;
     }
-    if(rom_path.empty()){
-        LOG_FATAL("Error: No input file path to chip8 rom.\n");
+    if(romPath.empty()){
+        std::cerr << "Error: No input file path to chip8 rom." << std::endl;
         exit(-1);
     }
 
-    if(flags.log_file && !log_file.empty()){
-        chip8_logger.set_log_file(log_file);
+    // Init logger if enabled
+    if(flags.logFile && !logFile.empty()){
+        chip8Logger.setLogEnable(true);
+        chip8Logger.setLogFile(logFile);
     }
-    else if(flags.log_file){
-        chip8_logger.set_log_file_default();
+    else if(flags.logFile){
+        chip8Logger.setLogEnable(true);
+        chip8Logger.setDefaultLogFile();
     }
 
     try{
-
-        const std::unordered_map<std::string, key_action> chip8_key_binds({ {"key_ch8_0",       KEY_CH8_0},
-                                                                            {"key_ch8_1",       KEY_CH8_1},
-                                                                            {"key_ch8_2",       KEY_CH8_2},
-                                                                            {"key_ch8_3",       KEY_CH8_3},
-                                                                            {"key_ch8_4",       KEY_CH8_4},
-                                                                            {"key_ch8_5",       KEY_CH8_5},
-                                                                            {"key_ch8_6",       KEY_CH8_6},
-                                                                            {"key_ch8_7",       KEY_CH8_7},
-                                                                            {"key_ch8_8",       KEY_CH8_8},
-                                                                            {"key_ch8_9",       KEY_CH8_9},
-                                                                            {"key_ch8_a",       KEY_CH8_A},
-                                                                            {"key_ch8_b",       KEY_CH8_B},
-                                                                            {"key_ch8_c",       KEY_CH8_C},
-                                                                            {"key_ch8_d",       KEY_CH8_D},
-                                                                            {"key_ch8_e",       KEY_CH8_E},
-                                                                            {"key_ch8_f",       KEY_CH8_F},
-                                                                            {"key_emu_pause",   KEY_EMU_PAUSE},
-                                                                            {"key_emu_reset",   KEY_EMU_RESET},});
-
-        ini_reader config("res/config.ini");
+        IniReader config(configFile);
 
         resolution.first = config.getInt("Display", "disp_width", 640);
         resolution.second = config.getInt("Display", "disp_height", 480);
@@ -219,81 +195,81 @@ int main(int argc, char** argv){
         palette.first.b = fg_raw & 0xFF;
         palette.first.a = 0xFF;
 
-        auto chip8_ini_binds = config.getHeaderValues("Keys");
+        auto chip8IniBinds = config.getHeaderValues("Keys");
 
-        for(auto ini_binds_it = chip8_ini_binds.begin(); ini_binds_it != chip8_ini_binds.end(); ini_binds_it++){
-            if(chip8_key_binds.count(ini_binds_it->first)){ 
-                key_enum bind = {0,KMOD_NONE};
+        for(auto iniBindsIt = chip8IniBinds.begin(); iniBindsIt != chip8IniBinds.end(); iniBindsIt++){
+            Chip8::KeyHandler::KeyAction bindAction = Chip8::KeyHandler::getActionFromName(iniBindsIt->first);
+            Chip8::KeyHandler::KeyPair bindKeys = {0,KMOD_NONE};
 
-                std::size_t ind;
-                if((ind = ini_binds_it->second.find("//")) != std::string::npos){
-                    if(ind == 0 || ind == ini_binds_it->second.size() - 2){
-                        LOG_FATAL("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", ini_binds_it->second, "' not recognized\n", logger::endl);
+            std::size_t ind;
+            if((ind = iniBindsIt->second.find("//")) != std::string::npos){
+                if(ind == 0 || ind == iniBindsIt->second.size() - 2){
+                    std::cerr << "Error: Invalid keybind '" << iniBindsIt->first << "=" <<  iniBindsIt->second << "', key or modifier '" << iniBindsIt->second << "' not recognized\n" << std::endl;
+                    exit(-1);
+                }
+
+                std::string bind_key0 = iniBindsIt->second.substr(iniBindsIt->second.find_first_not_of(" "),            iniBindsIt->second.find_last_not_of(" ", ind - 2) + 1);
+                std::string bind_key1 = iniBindsIt->second.substr(iniBindsIt->second.find_first_not_of(" ", ind + 2),   iniBindsIt->second.find_last_not_of(" ") + 1);
+
+                if((bindKeys.modifier = Chip8::KeyHandler::getKmodFromName(bind_key0)) != KMOD_NONE){
+                    if((bindKeys.key = SDL_GetKeyFromName(bind_key1.c_str())) == SDLK_UNKNOWN){
+                        std::cerr << "Error: Invalid keybind '" << iniBindsIt->first << "=" << iniBindsIt->second << "', key or modifier '" << bind_key1 << "' not recognized\n" << std::endl;
                         exit(-1);
                     }
-
-                    std::string bind_key0 = ini_binds_it->second.substr(ini_binds_it->second.find_first_not_of(" "),            ini_binds_it->second.find_last_not_of(" ", ind - 2) + 1);
-                    std::string bind_key1 = ini_binds_it->second.substr(ini_binds_it->second.find_first_not_of(" ", ind + 2),   ini_binds_it->second.find_last_not_of(" ") + 1);
-
-                    if((bind.modifier = lookUpSDLKeymod(bind_key0)) != KMOD_NONE){
-                        if((bind.key = lookUpSDLKeycode(bind_key1)) == SDLK_UNKNOWN){
-                            LOG_FATAL("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", bind_key1, "' not recognized\n", logger::endl);
-                            exit(-1);
-                        }
-                    
-                    }
-                    else if((bind.key = lookUpSDLKeycode(bind_key0)) != SDLK_UNKNOWN){
-                        if((bind.modifier = lookUpSDLKeymod(bind_key1)) == KMOD_NONE){
-                            LOG_FATAL("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", bind_key1, "' not recognized\n", logger::endl);  
-                            exit(-1);
-                        }
-                    }
-                    else{
-                        if((bind.key = lookUpSDLKeycode(ini_binds_it->second)) == SDLK_UNKNOWN){
-                            LOG_FATAL("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key or modifier '", ini_binds_it->second, "' not recognized", logger::endl);
-                            exit(-1);  
-                        }
-                    }
-
-                    bind_map.emplace(bind, chip8_key_binds.find(ini_binds_it->first)->second);
+                
                 }
-                else if((bind.key = lookUpSDLKeycode(ini_binds_it->second)) != SDLK_UNKNOWN){
-                    bind_map.emplace(bind, chip8_key_binds.find(ini_binds_it->first)->second);
+                else if((bindKeys.key = SDL_GetKeyFromName(bind_key0.c_str())) != SDLK_UNKNOWN){
+                    if((bindKeys.modifier = Chip8::KeyHandler::getKmodFromName(bind_key1)) == KMOD_NONE){
+                        std::cerr << "Error: Invalid keybind '" << iniBindsIt->first << "=" << iniBindsIt->second << "' << key or modifier '" << bind_key1 << "' not recognized\n" << std::endl;  
+                        exit(-1);
+                    }
                 }
                 else{
-                    LOG_FATAL("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', key '", ini_binds_it->second, "' not recognized", logger::endl);
-                    exit(-1);  
+                    if((bindKeys.key = SDL_GetKeyFromName(iniBindsIt->second.c_str())) == SDLK_UNKNOWN){
+                        std::cerr << "Error: Invalid keybind '" << iniBindsIt->first << "=" << iniBindsIt->second << "' << key or modifier '" << iniBindsIt->second << "' not recognized" << std::endl;
+                        exit(-1);  
+                    }
                 }
+
+                bindMap.emplace(bindKeys, bindAction);
+            }
+            else if(SDL_GetKeyFromName(iniBindsIt->second.c_str()) != SDLK_UNKNOWN){
+                bindMap.emplace(bindKeys, bindAction);
             }
             else{
-                LOG_FATAL("Error: Invalid keybind '", ini_binds_it->first, "=", ini_binds_it->second, "', bind '", ini_binds_it->second, "' not recognized", logger::endl);
-                exit(-1);
+                std::cerr << "Error: Invalid keybind '" << iniBindsIt->first << "=" << iniBindsIt->second << "' << key '" << iniBindsIt->second << "' not recognized" << std::endl;
+                exit(-1);  
             }
         }
     }
-    catch(std::string error){
-        LOG_FATAL("INI file parse error: ", error, logger::endl);
+    catch(const std::string& error){
+        std::cerr << "Ini file: " << error << std::endl;
         exit(-1);  
+    }
+    catch(const IniReaderException& exception){
+        std::cerr << "Ini file: " << exception.what() << std::endl;
+        exit(-1);
     }
 
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) == -1){
-        LOG_FATAL("SDL Error:", SDL_GetError(), logger::endl);
+        std::cerr << "SDL Error:" << SDL_GetError() << std::endl;
     }
 
-    chip8_logger.log<logger::log_trace>("Resolution: ", resolution.first, "x", resolution.second, logger::endl);
-    chip8_logger.log<logger::log_trace>("Rom: ", rom_path, logger::endl);
-    chip8_logger.log<logger::log_trace>("Palette: fg=0x", std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.first.r),
-                                                          std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.first.g),
-                                                          std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.first.b),
-                                                          std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.first.a),
-                                                " bg=0x", std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.second.r),
-                                                          std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.second.g),
-                                                          std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.second.b),
-                                                          std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.second.a), logger::endl);
+    chip8Logger.log<Logger::LogTrace>("Resolution: ", resolution.first, "x", resolution.second, Logger::endl);
+    chip8Logger.log<Logger::LogTrace>("Rom: ", romPath, Logger::endl);
+    chip8Logger.log<Logger::LogTrace>("Palette: fg=0x", std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.first.r),
+                                                        std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.first.g),
+                                                        std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.first.b),
+                                                        std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.first.a),
+                                              " bg=0x", std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.second.r),
+                                                        std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.second.g),
+                                                        std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.second.b),
+                                                        std::hex, std::setw(2), std::setfill('0'), static_cast<int>(palette.second.a), Logger::endl);
 
-    chip8_emulator emu(resolution, palette, rom_path, bind_map, true);
 
-    emu.run();
+    Chip8::Emulator emulator(resolution, palette, romPath, bindMap, true);
+
+    emulator.run();
 
     SDL_Quit();
 

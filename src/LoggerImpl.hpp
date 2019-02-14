@@ -2,6 +2,7 @@
 #define LOGGER_LOGGER_INTERFACE_IMPL_H
 
 #include <algorithm>
+#include <ctime>
 #include <regex>
 
 #include "Logger.hpp"
@@ -20,29 +21,31 @@ class LoggerInterfaceImpl : public LoggerInterface{
             heading.append(std::ctime(&time));
             heading.erase(--heading.end());
             if(t_colored)
-                heading.append("] [" +  std::to_string(m_logLine) + "] [" + logLevelColors[t_level] + logLevelStrings[t_level] + LOGGER_ANSI_COLOR_RESET + "] ");
+                heading.append("] [" +  std::to_string(m_logLine) + "] [" + getLevelColorString(t_level) + getStringFromLevel(t_level) + LOGGER_ANSI_COLOR_RESET + "] ");
             else
-                heading.append("] [" +  std::to_string(m_logLine) + "] [" + logLevelStrings[t_level] + "] ");
+                heading.append("] [" +  std::to_string(m_logLine) + "] [" + getStringFromLevel(t_level) + "] ");
             return heading;
         }
 
     public:
         void openOstream(){
-            std::time_t time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-            std::string logFile(std::ctime(&time));
-            std::replace(logFile.begin(), logFile.end(), ' ', '_');
+            std::time_t rawTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+            tm* localTime = localtime(&rawTime);
+            char fileNameBuffer[20];
+            std::strftime(fileNameBuffer, sizeof(fileNameBuffer), "%m-%d-%Y_%H:%M:%S", localTime);
+            std::string logFile(fileNameBuffer);
             logFile.insert(0, "./log/chip8_");
-            logFile.erase(--logFile.end());
             logFile.append(".log");
             m_logStream.open(logFile, std::fstream::out);
+            std::cout << logFile << std::endl;
             if(!m_logStream.is_open()){
-                throw(std::runtime_error("LOGGER: Could not open output stream"));
+                throw(LoggerException("LOGGER: Could not open output stream"));
             }
         }
         void openOstream(const std::string& t_filePath){
             m_logStream.open(t_filePath, std::fstream::out);
             if(!m_logStream.is_open()){
-                throw(std::runtime_error("LOGGER: Could not open output stream"));
+                throw(LoggerException("LOGGER: Could not open output stream"));
             }
         }
 

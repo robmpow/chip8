@@ -10,10 +10,12 @@
 #define CHIP8_UTIL_BIT_WIDTH(type) (8 * sizeof(type))
 
 namespace Chip8{
+    namespace Util{
 
-extern const char* regFile;
-const char* fileExists(const char* t_filePath);
+    extern const char* regFile;
+    const char* fileExists(const char* t_filePath);
 
-} // namespace Chip8Util
+    } // namesapce Util
+} // namespace Chip8
 
 #endif // CHIP8_UTIL_HPP

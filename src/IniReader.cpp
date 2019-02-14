@@ -27,14 +27,14 @@ const char* IniReaderException::what() const noexcept{
 }
 
 IniReader::IniReader(){
-    IniReader(IniReader_DEFAULT_INI_FILE);
+    IniReader(INI_READER_DEFAULT_INI_FILE);
 }
 
 IniReader::IniReader(const std::string& t_iniFile){
     std::ifstream iniStream;
     iniStream.open(t_iniFile);
     if(!iniStream.is_open()){
-       throw IniReaderException("Error: ini file  " + t_iniFile + " does not exist or could not be opened.\n", IniReaderException::FileRead);
+       throw IniReaderException("Error: ini file  " + t_iniFile + " does not exist or could not be opened", IniReaderException::FileRead);
     }
 
     std::size_t currentLine = 0;

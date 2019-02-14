@@ -32,6 +32,14 @@ enum LogLevel{
     LogInfo
 };
 
+class LoggerException : public std::exception{
+protected:
+    std::string m_exceptMsg;
+public:
+    LoggerException(std::string t_exceptMsg) noexcept;
+    const char* what() const noexcept;
+};
+
 class LoggerInterface{
     public:
         virtual void openOstream() = 0;
@@ -41,11 +49,11 @@ class LoggerInterface{
         virtual ~LoggerInterface() {};
 };
 
-extern int8_t logAll;
-extern std::array<const std::string, 6> logLevelStrings;
-extern std::array<const std::string, 6> logLevelColors;
+extern LogLevel LogAll;
 
-int8_t stringToLogLevel(const std::string& t_logLevelString);
+LogLevel getLevelFromString(std::string t_string);
+const std::string& getStringFromLevel(LogLevel t_level);
+const std::string& getLevelColorString(LogLevel t_level);
 
 template<typename TLogInterface>
 class Logger{
@@ -73,15 +81,15 @@ class Logger{
         }
 
     public:
-        Logger() : m_level(LogWarning), m_logInterface(std::make_unique<TLogInterface>()), m_enable(true){}
+        Logger() : m_level(LogWarning), m_logInterface(std::make_unique<TLogInterface>()), m_enable(false){}
 
-        Logger(LogLevel t_logLevel) : m_level(t_logLevel), m_logInterface(std::make_unique<TLogInterface>()), m_enable(true){}
+        Logger(LogLevel t_logLevel) : m_level(t_logLevel), m_logInterface(std::make_unique<TLogInterface>()), m_enable(false){}
 
-        Logger(std::string t_fileName) : m_level(LogWarning), m_logInterface(std::make_unique<TLogInterface>()), m_enable(true){
+        Logger(std::string t_fileName) : m_level(LogWarning), m_logInterface(std::make_unique<TLogInterface>()), m_enable(false){
             m_logInterface->openOstream(t_fileName);
         }
 
-        Logger(LogLevel ll, std::string t_fileName) : m_level(LogWarning), m_logInterface(std::make_unique<TLogInterface>()), m_enable(true){
+        Logger(LogLevel ll, std::string t_fileName) : m_level(LogWarning), m_logInterface(std::make_unique<TLogInterface>()), m_enable(false){
             m_logInterface->openOstream(t_fileName);
         }
 
@@ -106,7 +114,7 @@ class Logger{
         template<LogLevel TLevel, typename...Args>
         void log(Args...t_args){
             if(TLevel <= m_level && m_enable){
-                m_logInterface->write(Level, buildLogMsg(t_args...));
+                m_logInterface->write(TLevel, buildLogMsg(t_args...));
             }
         }
 
