@@ -55,9 +55,8 @@ int main(int argc, char** argv){
     std::unordered_map<Chip8::KeyHandler::KeyPair, Chip8::KeyHandler::KeyAction> bindMap;
 
     union{
-        Bitfield::Bitfield<uint8_t, 0, 1> log;
-        Bitfield::Bitfield<uint8_t, 1, 1> force_log;
-        Bitfield::Bitfield<uint8_t, 2, 1> logFile;
+        Bitfield::Bitfield<uint8_t, 0, 1> logEnable;
+        Bitfield::Bitfield<uint8_t, 1, 1> logFile;
         Bitfield::Bitfield<uint8_t, 0, 8> all;
     } flags;
 
@@ -95,16 +94,16 @@ int main(int argc, char** argv){
                             std::string opt_string(optarg);
                             std::transform(opt_string.begin(), opt_string.end(), opt_string.begin(), ::tolower);
                             if(!opt_string.compare("1")){
-                                flags.force_log = 1;
+                                flags.logEnable = 1;
                             }
                             else if(!opt_string.compare("0")){
-                                flags.force_log = 0;
+                                flags.logEnable = 0;
                             }
                             else if(!opt_string.compare("true")){
-                                flags.force_log = 1;
+                                flags.logEnable = 1;
                             }
                             else if(!opt_string.compare("false")){
-                                flags.force_log = 0;
+                                flags.logEnable = 0;
                             }
                             else{
                                 std::cerr << argv[0] << ": Error option '--log_enable' argument '" << optarg << "' is not recognized\nTry '" << argv[0] << " --help for more information" << std::endl;
@@ -112,7 +111,7 @@ int main(int argc, char** argv){
                             }
                         }
                         else{
-                            flags.log = 1;
+                            flags.logEnable = 1;
                         }
                         break;
                     case 2:
@@ -133,10 +132,10 @@ int main(int argc, char** argv){
                 }
                 break;
             case 'l':
-                flags.log |= 1;
+                flags.logEnable |= 1;
                 break;
             case 'f':
-                flags.log |= 1;
+                flags.logEnable |= 1;
                 flags.logFile = 1;
 
             case '?':
@@ -167,14 +166,17 @@ int main(int argc, char** argv){
     }
 
     // Init logger if enabled
-    if(flags.logFile && !logFile.empty()){
+    if(flags.logEnable && flags.logFile && !logFile.empty()){
         chip8Logger.setLogEnable(true);
         chip8Logger.setLogFile(logFile);
     }
-    else if(flags.logFile){
+    else if(flags.logEnable && flags.logFile){
         chip8Logger.setLogEnable(true);
         chip8Logger.setDefaultLogFile();
     }
+
+    chip8Logger.setLogEnable(static_cast<bool>(flags.logEnable));
+    
 
     try{
         IniReader config(configFile);
@@ -197,18 +199,18 @@ int main(int argc, char** argv){
 
         auto chip8IniBinds = config.getHeaderValues("Keys");
 
-        for(auto iniBindsIt = chip8IniBinds.begin(); iniBindsIt != chip8IniBinds.end(); iniBindsIt++){
+        for(auto iniBindsIt = chip8IniBinds.begin(); iniBindsIt != chip8IniBinds.end(); ++iniBindsIt){
             Chip8::KeyHandler::KeyAction bindAction = Chip8::KeyHandler::getActionFromName(iniBindsIt->first);
             Chip8::KeyHandler::KeyPair bindKeys = {0,KMOD_NONE};
 
             std::size_t ind;
-            if((ind = iniBindsIt->second.find("//")) != std::string::npos){
+            if((ind = iniBindsIt->second.find("::")) != std::string::npos){
                 if(ind == 0 || ind == iniBindsIt->second.size() - 2){
                     std::cerr << "Error: Invalid keybind '" << iniBindsIt->first << "=" <<  iniBindsIt->second << "', key or modifier '" << iniBindsIt->second << "' not recognized\n" << std::endl;
                     exit(-1);
                 }
 
-                std::string bind_key0 = iniBindsIt->second.substr(iniBindsIt->second.find_first_not_of(" "),            iniBindsIt->second.find_last_not_of(" ", ind - 2) + 1);
+                std::string bind_key0 = iniBindsIt->second.substr(iniBindsIt->second.find_first_not_of(" "),            iniBindsIt->second.find_last_not_of(" ", ind - 1) + 1);
                 std::string bind_key1 = iniBindsIt->second.substr(iniBindsIt->second.find_first_not_of(" ", ind + 2),   iniBindsIt->second.find_last_not_of(" ") + 1);
 
                 if((bindKeys.modifier = Chip8::KeyHandler::getKmodFromName(bind_key0)) != KMOD_NONE){
@@ -225,15 +227,13 @@ int main(int argc, char** argv){
                     }
                 }
                 else{
-                    if((bindKeys.key = SDL_GetKeyFromName(iniBindsIt->second.c_str())) == SDLK_UNKNOWN){
-                        std::cerr << "Error: Invalid keybind '" << iniBindsIt->first << "=" << iniBindsIt->second << "' << key or modifier '" << iniBindsIt->second << "' not recognized" << std::endl;
-                        exit(-1);  
-                    }
+                    std::cerr << "Error: Invalid keybind '" << iniBindsIt->first << "=" << iniBindsIt->second << "' << key or modifier '" << iniBindsIt->second << "' not recognized" << std::endl;
+                    exit(-1);  
                 }
 
                 bindMap.emplace(bindKeys, bindAction);
             }
-            else if(SDL_GetKeyFromName(iniBindsIt->second.c_str()) != SDLK_UNKNOWN){
+            else if((bindKeys.key = SDL_GetKeyFromName(iniBindsIt->second.c_str())) != SDLK_UNKNOWN){
                 bindMap.emplace(bindKeys, bindAction);
             }
             else{
@@ -253,6 +253,10 @@ int main(int argc, char** argv){
 
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) == -1){
         std::cerr << "SDL Error:" << SDL_GetError() << std::endl;
+    }
+
+    for(auto kp : bindMap){
+        std::cout << kp.first << ", " << kp.second << std::endl;
     }
 
     chip8Logger.log<Logger::LogTrace>("Resolution: ", resolution.first, "x", resolution.second, Logger::endl);

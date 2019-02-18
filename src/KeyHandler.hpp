@@ -16,7 +16,7 @@ namespace Chip8{
 
         struct KeyPair{
             SDL_Keycode key;
-            uint16_t modifier;
+            int32_t modifier;
 
             bool operator==(const KeyPair& t_other) const{
                 return key == t_other.key && (modifier == t_other.modifier || (modifier & t_other.modifier));

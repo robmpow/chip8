@@ -39,14 +39,14 @@ namespace Chip8{
 
         uint16_t getKmodFromName(const std::string& t_modName){
             const std::unordered_map<std::string, uint16_t> kmodMap({{"LSHIFT",   KMOD_LSHIFT},
-                                                                    {"RSHIFT",   KMOD_RSHIFT},
-                                                                    {"LCTRL",    KMOD_LCTRL},
-                                                                    {"RCTRL",    KMOD_RCTRL},
-                                                                    {"LALT",     KMOD_LALT},
-                                                                    {"RALT",     KMOD_RALT},
-                                                                    {"CTRL",     KMOD_CTRL},
-                                                                    {"ALT",      KMOD_ALT},
-                                                                    {"SHIFT",    KMOD_SHIFT},});
+                                                                     {"RSHIFT",   KMOD_RSHIFT},
+                                                                     {"LCTRL",    KMOD_LCTRL},
+                                                                     {"RCTRL",    KMOD_RCTRL},
+                                                                     {"LALT",     KMOD_LALT},
+                                                                     {"RALT",     KMOD_RALT},
+                                                                     {"CTRL",     KMOD_CTRL},
+                                                                     {"ALT",      KMOD_ALT},
+                                                                     {"SHIFT",    KMOD_SHIFT},});
 
             auto res = kmodMap.find(t_modName);
             if(res != kmodMap.end()){
@@ -148,7 +148,7 @@ namespace Chip8{
         }
 
         bool KeyHandler::dispatch(SDL_Keycode t_keyCode, bool t_keyState, bool t_keyRepeat){
-            KeyPair keyPair{t_keyCode, SDL_GetModState()};
+            KeyPair keyPair{t_keyCode, SDL_GetModState() & ~KMOD_NUM & ~KMOD_CAPS & ~KMOD_GUI};
             auto res = m_bindMap.find(keyPair);
             if(res != m_bindMap.end()){
                 if(m_handlerContext[res->second]){

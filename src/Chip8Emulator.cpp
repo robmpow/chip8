@@ -4,6 +4,7 @@
 #include <chrono>
 #include <unistd.h>
 #include <functional>
+#include <cstdlib>
 
 #include "LoggerImpl.hpp"
 #include "Chip8Emulator.hpp"
@@ -226,7 +227,7 @@ namespace Chip8{
             int frame_tex_pitch = 0;
 
             if(!SDL_LockTexture(m_frameTexture, NULL, (void**)&frame_tex_pixels, &frame_tex_pitch)){
-                uint8_t* ch8_display = m_chip8Instance.getDisplay();
+                auto ch8_display = m_chip8Instance.getDisplay();
                 for(uint ind = 0; ind < CHIP8_DISP_SIZE; ind++){
                     uint8_t disp_byte = ch8_display[ind];
                     for(uint bit_ind = 0; bit_ind < 8; bit_ind++){

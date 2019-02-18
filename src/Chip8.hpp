@@ -23,15 +23,6 @@
 
 #define CHIP8_TICK_PERIOD_USEC 2000 
 
-#define CHIP8_V(ind)          m_vRegs[ind]
-#define CHIP8_OP_X            ((op >> 8) & 0xF)
-#define CHIP8_OP_Y            ((op >> 4) & 0xF)
-#define CHIP8_VX              m_vRegs[(op >> 8) & 0xF]
-#define CHIP8_VY              m_vRegs[(op >> 4) & 0xF]
-#define CHIP8_NNN             (op & 0x0FFF)
-#define CHIP8_KK              static_cast<uint8_t>(op & 0x00FF)
-#define CHIP8_NIB             (op & 0xF)
-
 namespace Chip8{
 
 union TickResult{
@@ -61,61 +52,94 @@ enum Chip8Key{
 };
 
 class Chip8 {
-private:
+protected:
 
     std::mt19937 m_generator;
     std::uniform_int_distribution<> m_dist;
 
-    const uint8_t m_sprite_table[CHIP8_SPRITE_TABLE_SIZE] = {   0xF0, 0x90, 0x90, 0x90, 0xF0, /* 0 */
-                                                                0x20, 0x60, 0x20, 0x20, 0x70, /* 1 */
-                                                                0xF0, 0x10, 0xF0, 0x80, 0xF0, /* 2 */
-                                                                0xF0, 0x10, 0xF0, 0x10, 0xF0, /* 3 */
-                                                                0x90, 0x90, 0xF0, 0x10, 0x10, /* 4 */
-                                                                0xF0, 0x80, 0xF0, 0x10, 0xF0, /* 5 */
-                                                                0xF0, 0x80, 0xF0, 0x90, 0xF0, /* 6 */
-                                                                0xF0, 0x10, 0x20, 0x40, 0x40, /* 7 */
-                                                                0xF0, 0x90, 0xF0, 0x90, 0xF0, /* 8 */
-                                                                0xF0, 0x90, 0xF0, 0x10, 0xF0, /* 9 */
-                                                                0xF0, 0x90, 0xF0, 0x90, 0x90, /* A */
-                                                                0xE0, 0x90, 0xE0, 0x90, 0xE0, /* B */
-                                                                0xF0, 0x80, 0x80, 0x80, 0xF0, /* C */
-                                                                0xE0, 0x90, 0x90, 0x90, 0xE0, /* E */
-                                                                0xF0, 0x80, 0xF0, 0x80, 0x80, /* F */ };
-    uint m_seed;
-
-    uint8_t m_memory[CHIP8_MAIN_MEM_SIZE];
-    uint8_t m_vRegs[CHIP8_NUM_V_REG];
-    uint16_t m_stack[CHIP8_STACK_SIZE];
-    uint8_t m_disp[CHIP8_DISP_SIZE];
+    const std::array<uint8_t, CHIP8_SPRITE_TABLE_SIZE>m_spriteTable = {0xF0, 0x90, 0x90, 0x90, 0xF0, /* 0 */
+                                                                       0x20, 0x60, 0x20, 0x20, 0x70, /* 1 */
+                                                                       0xF0, 0x10, 0xF0, 0x80, 0xF0, /* 2 */
+                                                                       0xF0, 0x10, 0xF0, 0x10, 0xF0, /* 3 */
+                                                                       0x90, 0x90, 0xF0, 0x10, 0x10, /* 4 */
+                                                                       0xF0, 0x80, 0xF0, 0x10, 0xF0, /* 5 */
+                                                                       0xF0, 0x80, 0xF0, 0x90, 0xF0, /* 6 */
+                                                                       0xF0, 0x10, 0x20, 0x40, 0x40, /* 7 */
+                                                                       0xF0, 0x90, 0xF0, 0x90, 0xF0, /* 8 */
+                                                                       0xF0, 0x90, 0xF0, 0x10, 0xF0, /* 9 */
+                                                                       0xF0, 0x90, 0xF0, 0x90, 0x90, /* A */
+                                                                       0xE0, 0x90, 0xE0, 0x90, 0xE0, /* B */
+                                                                       0xF0, 0x80, 0x80, 0x80, 0xF0, /* C */
+                                                                       0xE0, 0x90, 0x90, 0x90, 0xE0, /* E */
+                                                                       0xF0, 0x80, 0xF0, 0x80, 0x80, /* F */ };
+    std::mt19937::result_type m_seed;
+    std::array<uint8_t, CHIP8_MAIN_MEM_SIZE> m_memory;
+    std::array<uint8_t, CHIP8_NUM_V_REG> m_vRegs;
+    std::array<uint16_t, CHIP8_STACK_SIZE> m_stack;
+    std::array<uint8_t, CHIP8_DISP_SIZE> m_disp;
     uint16_t m_iReg;
     uint8_t m_dtReg;
     uint8_t m_stReg;
-
     uint8_t m_stackPointer : 4;
     uint16_t m_programCounter;
-
     uint8_t m_tCounter;
-
     uint16_t m_keystates;
-    
+
+    // Opcode functions
+    void CLS();
+    void RET();
+    void JMP(uint16_t t_nnn);
+    void CALL(uint16_t t_nnn);
+    void SE_IMM(uint8_t t_x, uint8_t t_kk);
+    void SNE_IMM(uint8_t t_x, uint8_t t_kk);
+    void SE_REG(uint8_t t_x, uint8_t t_y);
+    void LD_IMM(uint8_t t_x, uint8_t t_kk);
+    void ADD_IMM(uint8_t t_x, uint8_t t_kk);
+    void LD_REG(uint8_t t_x, uint8_t t_y);
+    void OR(uint8_t t_x, uint8_t t_y);
+    void AND(uint8_t t_x, uint8_t t_y);
+    void XOR(uint8_t t_x, uint8_t t_y);
+    void ADD_REG(uint8_t t_x, uint8_t t_y);
+    void SUB_REG(uint8_t t_x, uint8_t t_y);
+    void SHR(uint8_t t_x);
+    void SUBN(uint8_t t_x, uint8_t t_y);
+    void SHL(uint8_t t_x);
+    void SNE_REG(uint8_t t_x, uint8_t t_y);
+    void LD_I(uint16_t t_nnn);
+    void JMP_REG(uint16_t t_nnn);
+    void RND(uint8_t t_x, uint8_t t_kk);
+    void DRW(uint8_t t_x, uint8_t t_y, uint8_t t_n);
+    void SKP(uint8_t t_x);
+    void SKNP(uint8_t t_x);
+    void LD_VX_DT(uint8_t t_x);
+    void LD_KP(uint8_t t_x);
+    void LD_DT_VX(uint8_t t_x);
+    void LD_ST(uint8_t t_x);
+    void ADD_I(uint8_t t_x);
+    void LD_SPRT(uint8_t t_x);
+    void LD_BCD(uint8_t t_x);
+    void LD_MEM(uint8_t t_x);
+    void LD_REGS(uint8_t t_x);
 
 public:
-    Chip8(uint seed, const std::string& file_name);
-    Chip8(uint seed, std::istream& inStream);
+    Chip8(std::mt19937::result_type t_seed);
+    Chip8(std::mt19937::result_type t_seed, const std::string& t_rom);
+    Chip8(std::mt19937::result_type t_seed, std::istream& t_inStream);
 
     void reset();
-    void reset(uint seed);
-    void load(const std::string& file_path);
-    void load(std::istream& in_stream);
+    void reset(std::mt19937::result_type t_seed);
+    void load(const std::string& t_filePath);
+    void load(std::istream& t_iStream);
     TickResult run_tick();
 
-    void updateKeystate(bool press_state, bool repeat, const Chip8Key& key);
+    void updateKeystate(bool t_pressState, bool t_repeat, const Chip8Key& t_key);
 
-    uint8_t* getDisplay(){
-        return m_disp;
+    std::array<uint8_t, ((CHIP8_DISP_X >> 3) * CHIP8_DISP_Y)>::const_iterator getDisplay(){
+        return m_disp.begin();
     }
 };
-}
+
+} // namespace Chip8
 
 #endif // CHIP8_INTERPRETER_H
  
