@@ -1,12 +1,12 @@
-#Chip8 Emulator
+# Chip8 Emulator
 
 This is a chip8 emulator I wrote in C++ using SDL2 for display, sound and input.
 
-##Compilation
+## Compilation
 
 The emulator can be built using the provided makefile. Note this project is targeted at Linux and uses Posix functions that do not work on other operating systems. The built binary is placed into the bin directory.
 
-##Usage
+## Usage
 
 chip8 [ROM File] [Options]
     -r, --res=WxH           set the display resolution to WxH
